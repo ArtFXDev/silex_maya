@@ -1,4 +1,5 @@
-from silex_client.utils.context import Context
+from silex_client.core.context import Context
 from maya import cmds
 
-Context.get().ws_connection.start_multithreaded()
+Context.get().event_loop.start()
+Context.get().ws_connection.start()
