@@ -2,10 +2,9 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
-import os
-
+from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
+
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -26,14 +25,9 @@ class Save(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        print("aaa")
-        print(action_query.context_metadata)
-        print([action_query.context_metadata.get("project", ""), action_query.context_metadata.get("sequence", ""), action_query.context_metadata.get("shot", ""), action_query.context_metadata.get("task", ""), "work"])
-        meta = action_query.context_metadata
-        print([meta.get("project", ""), meta.get("sequence", ""), meta.get("shot", ""), meta.get("task", ""), "work"])
-        print(os.path.join("work", meta.get("sequence", "")))
-        final_path = os.path.join(meta.get("project", ""), meta.get("sequence", ""), meta.get("shot", ""), meta.get("task", ""), "work")
-        print(final_path)
+        def save():
+            import maya.mel as mel
+            mel.eval("incrementAndSaveScene( 0 )")
         
-        #cmds.file(rename = path[0])
-        #cmds.file(save = True)
+
+        await Utils.wrapped_execute(action_query, save)
