@@ -19,7 +19,6 @@ class Utils:
             future.set_result(result)
         utils.executeDeferred(wrapped_function)
 
-
         def callback(task_result: futures.Future):
             if task_result.cancelled():
                 return

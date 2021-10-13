@@ -32,23 +32,37 @@ class Build(CommandBase):
     ):
         
         async def get_scene_path():
-            print(action_query.context_metadata)
-            task = await gazu.task.get_task(action_query.context_metadata.get("task_id", ""))
-            working_files = await gazu.files.build_working_file_path(task["id"])
+            #task = await gazu.task.get_task(action_query.context_metadata.get("task_id", "ac0e79cf-e5ce-49ff-932f-6aed3d425e4a"))
+            task_id = action_query.context_metadata.get("task_id", "none")
+            working_files = await gazu.files.build_working_file_path(task_id)
+            if task_id == "none":
+                Dialogs().err("Invalid task_id !")
+                return -1
+
             soft = await gazu.files.get_software_by_name("maya")
-            working_files += soft.get("file_extension", ".no")
+            extension = soft.get("file_extension", ".no")
+            working_files += extension 
+            if extension == ".no":
+                Dialogs().warn("Sofware not set in Kitsu, file extension will be invalid")
+                return -1
+
             return working_files
-            
+
         def build():
             future = Context.get().event_loop.register_task(get_scene_path())
 
             # create recusively directory from path
             working_files = future.result()
+
+            # error in future
+            if working_files == -1 :
+                return
+
             working_folders = os.path.dirname(working_files)
             
             # if file already exist
-            if os.path.isfile(working_files):
-                Dialogs().inform("File already Exists")
+            if os.path.exists(working_files):
+                Dialogs().warn("File already Exists")
                 return
 
             os.makedirs(working_folders)
