@@ -43,8 +43,8 @@ class Build(CommandBase):
 
             soft = await gazu.files.get_software_by_name("maya")
             extension = soft.get("file_extension", ".no")
-            print(extension)
-            working_file_with_extension += extension if '.' in extension else f".{extension}" 
+            extension = extension if '.' in extension else f".{extension}" 
+            working_file_with_extension += extension
             if extension == ".no":
                 Dialogs().warn("Sofware not set in Kitsu, file extension will be invalid")
                 return -1, None
