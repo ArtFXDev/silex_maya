@@ -1,5 +1,6 @@
 from silex_client.core.context import Context
-from maya import cmds
+import maya.cmds as cmds
+import maya
 
 Context.get().event_loop.start()
 Context.get().ws_connection.start()
@@ -8,6 +9,9 @@ def create_shelf():
     shelf_id = "silex_shelf"
 
     if cmds.shelfLayout(shelf_id, ex=1):
+        if cmds.shelfLayout(shelf_id, q=1, ca=1):
+            for each in cmds.shelfLayout(shelf_id, q=1, ca=1):
+                cmds.deleteUI(each)
         cmds.deleteUI(shelf_id)
 
     cmds.shelfLayout(shelf_id, p="ShelfLayout")
