@@ -4,18 +4,20 @@ from typing import Any, Dict
 
 from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
-from silex_client.core.context import Context
-from concurrent import futures
+
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 from silex_maya.utils.dialogs import Dialogs
 
+import asyncio
 import os
 import gazu.files
 import gazu.task
 import maya.cmds as cmds
+import maya.mel as mel
+import re
 
 class Build(CommandBase):
     """
@@ -34,38 +36,53 @@ class Build(CommandBase):
         async def get_scene_path():
             #task = await gazu.task.get_task(action_query.context_metadata.get("task_id", "ac0e79cf-e5ce-49ff-932f-6aed3d425e4a"))
             task_id = action_query.context_metadata.get("task_id", "none")
-            working_files = await gazu.files.build_working_file_path(task_id)
+            working_file_with_extension = await gazu.files.build_working_file_path(task_id)
             if task_id == "none":
                 Dialogs().err("Invalid task_id !")
-                return -1
+                return -1, None
 
             soft = await gazu.files.get_software_by_name("maya")
             extension = soft.get("file_extension", ".no")
-            working_files += extension 
+            working_file_with_extension += extension 
             if extension == ".no":
                 Dialogs().warn("Sofware not set in Kitsu, file extension will be invalid")
-                return -1
+                return -1, None
 
-            return working_files
+            return working_file_with_extension, extension
 
         def build():
-            future = Context.get().event_loop.register_task(get_scene_path())
 
             # create recusively directory from path
-            working_files = future.result()
+            working_file_with_extension, ext = asyncio.run(get_scene_path())
 
             # error in future
-            if working_files == -1 :
+            if working_file_with_extension == -1 or not ext :
                 return
 
-            working_folders = os.path.dirname(working_files)
+            filename = os.path.basename(working_file_with_extension)
+            working_file_without_extension = os.path.splitext(filename)[0]
+            working_folders = os.path.dirname(working_file_with_extension)
             
             # if file already exist
-            if os.path.exists(working_files):
-                Dialogs().warn("File already Exists")
+            version = re.findall("[0-9]*$", working_file_without_extension)
+            version = version[0] if len(version) > 0 else ""  # get last number of file name
+            zf = len(version)
+            version = int(version)
+
+            # error in future
+            if version == "" :
+                Dialogs().err("Failed to get version from regex")
                 return
 
-            os.makedirs(working_folders)
-            cmds.file(rename = working_files)
+            file_without_version = re.findall("(?![0-9]*$).", working_file_without_extension)
+            file_without_version = ''.join(file_without_version)
+            while os.path.exists(working_file_with_extension):
+                version += 1
+                working_file_with_extension = os.path.join(working_folders, f"{file_without_version}{str(version).zfill(zf)}{ext}")
+
+            if not os.path.exists(working_folders):
+                os.makedirs(working_folders)
+
+            cmds.file(rename = working_file_with_extension)
             cmds.file(save = True)
         await Utils.wrapped_execute(action_query, build)
