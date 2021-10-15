@@ -40,11 +40,16 @@ class Screenshot(CommandBase):
         # Check the given task status
         task_statuses = await gazu.task.all_task_statuses()
         task_status = await gazu.task.get_task_status(task["task_status"]["id"])
-        if parameters["status"] in task_statuses:
-            task_status = gazu.task.get_task_status_by_short_name(parameters["status"])
+        if parameters["status"] in [
+            task_status["short_name"] for task_status in task_statuses
+        ]:
+            task_status = await gazu.task.get_task_status_by_short_name(
+                parameters["status"]
+            )
         else:
             logger.warning(
-                "Could not set the given task status: The given task status is invalid"
+                "Could not set the given task status: The given task status %s is invalid",
+                parameters["status"],
             )
 
         await gazu.task.add_comment(
