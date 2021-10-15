@@ -1,0 +1,10 @@
+proposal:
+  steps:
+    upload:
+      label: "Upload preview"
+      index: 20
+      commands:
+        thumbnail:
+          path: "silex_maya.commands.screenshot.Screenshot"
+          ask_user: true
+
