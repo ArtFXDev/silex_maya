@@ -1,0 +1,10 @@
+proposal:
+  steps:
+    build:
+      label: "Build"
+      index: 20
+      commands:
+        build:
+          path: "silex_maya.commands.screenshot.Screenshot"
+          ask_user: true
+
