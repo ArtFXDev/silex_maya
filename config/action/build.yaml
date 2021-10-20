@@ -6,4 +6,4 @@ build:
       index: 20
       commands:
         build:
-          path: "silex_maya.commands.build.Build"
+          path: "silex_maya.commands.save.Save"
