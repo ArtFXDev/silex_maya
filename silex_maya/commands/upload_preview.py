@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import typing
 from typing import Any, Dict, List
 
@@ -6,17 +7,15 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase, CommandParameters
 from silex_client.utils.log import logger
-from silex_maya.utils.utils import Utils
-from silex_maya.utils.preview import create_thumbnail
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 
-class Screenshot(CommandBase):
+class UploadPreview(CommandBase):
     """
-    Take a screenshot and upload it
+    Upload the
     """
 
     parameters: CommandParameters = {
@@ -30,9 +29,9 @@ class Screenshot(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        # Take a thumbnail of the current viewport
-        thumbnail_future = await Utils.wrapped_execute(action_query, create_thumbnail)
-        thumbnail = await thumbnail_future
+        if not isinstance(upstream, str) or not os.path.isfile(upstream):
+            logger.error("The upstream file path %s is incorrect", upstream)
+            raise Exception(f"The upstream file path {upstream} is incorrect")
 
         # Get current task
         task = await gazu.task.get_task(action_query.context_metadata["task_id"])
@@ -56,5 +55,5 @@ class Screenshot(CommandBase):
             task,
             task_status,
             parameters["description"],
-            attachments=[thumbnail],
+            attachments=[upstream],
         )
