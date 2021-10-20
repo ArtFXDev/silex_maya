@@ -1,10 +1,15 @@
 proposal:
   steps:
-    upload:
-      label: "Upload preview"
-      index: 20
+    preview:
+      label: "Post preview"
+      index: 50
       commands:
-        thumbnail:
-          path: "silex_maya.commands.screenshot.Screenshot"
+        capture_thumbnail:
+          label: "Capture thumbnail"
+          path: "silex_maya.commands.capture_preview.CapturePreview"
+        upload_thumbnail:
+          input_path: "preview:capture_thumbnail"
+          label: "Upload thumbnail"
+          path: "silex_maya.commands.upload_preview.UploadPreview"
           ask_user: true
 
