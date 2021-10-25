@@ -7,16 +7,18 @@ import typing
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery  # todo
-    
-class Utils:
 
+
+class Utils:
     @staticmethod
-    async def wrapped_execute(action_query, maya_function: Callable):
+    async def wrapped_execute(action_query, maya_function: Callable, *args, **kwargs):
 
         future = action_query.event_loop.loop.create_future()
+
         def wrapped_function():
-            result = maya_function()
+            result = maya_function(*args, **kwargs)
             future.set_result(result)
+
         utils.executeDeferred(wrapped_function)
 
         def callback(task_result: futures.Future):
