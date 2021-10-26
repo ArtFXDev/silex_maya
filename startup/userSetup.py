@@ -36,4 +36,5 @@ def create_shelf():
         )
 
 
+Context.get().start_services()
 maya.utils.executeDeferred(create_shelf)
