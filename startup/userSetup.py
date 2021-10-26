@@ -1,9 +1,8 @@
 from silex_client.core.context import Context
+from silex_client.resolve.config import Config
 import maya.cmds as cmds
 import maya
 
-Context.get().event_loop.start()
-Context.get().ws_connection.start()
 
 def create_shelf():
     shelf_id = "silex_shelf"
@@ -17,11 +16,25 @@ def create_shelf():
     cmds.shelfLayout(shelf_id, p="ShelfLayout")
     cmds.setParent(shelf_id)
 
-
-    actions = { item["name"]: f"Context.get().get_action('{item['name']}').execute()" for item in Context.get().config.actions }
+    import_statement = "from silex_client.action.action_query import ActionQuery\n"
+    actions = {
+        item["name"]: f"{import_statement}ActionQuery('{item['name']}').execute()"
+        for item in Config().actions
+    }
 
     for action in actions:
         cmds.setParent(shelf_id)
-        cmds.shelfButton(width=37, height=37, image="commandButton.png", l=action, imageOverlayLabel=action , command=actions[action], olb=(0, 0, 0, 0), olc=(.9, .9, .9))
+        cmds.shelfButton(
+            width=37,
+            height=37,
+            image="commandButton.png",
+            l=action,
+            imageOverlayLabel=action,
+            command=actions[action],
+            olb=(0, 0, 0, 0),
+            olc=(0.9, 0.9, 0.9),
+        )
 
+
+Context.get().start_services()
 maya.utils.executeDeferred(create_shelf)

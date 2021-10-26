@@ -23,5 +23,16 @@ class CreateCube(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         # Create the selected node
-        await Utils.wrapped_execute(action_query, cmds.polyCube)
-        await asyncio.sleep(0.1)
+        cube_future = await Utils.wrapped_execute(action_query, cmds.polyCube)
+        await asyncio.sleep(0.2)
+        return await cube_future
+
+    @CommandBase.conform_command()
+    async def undo(
+        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+    ):
+        # Create the selected node
+        await Utils.wrapped_execute(
+            action_query, cmds.delete, self.command_buffer.output_result[0]
+        )
+        await asyncio.sleep(0.2)
