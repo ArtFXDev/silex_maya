@@ -43,6 +43,6 @@ class Export_vrscene(CommandBase):
                   pr=True, ea=True, typ="V-Ray Scene")
 
         if os.path.exists(path):
-            Dialogs.inform('Export SUCCEDE !')
+            Dialogs.inform('Export SUCCEEDED !')
         else:
             Dialogs.error('ERROR : Export FAILD !')

@@ -54,6 +54,6 @@ class Export_abc(CommandBase):
         cmds.AbcExport(j=command)
 
         if os.path.exists(path):
-            Dialogs.inform('Export SUCCEDE !')
+            Dialogs.inform('Export SUCCEEDED !')
         else:
             Dialogs.error('ERROR : Export FAILD !')

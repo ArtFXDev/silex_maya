@@ -38,6 +38,6 @@ class Export_fbx(CommandBase):
         cmds.file(path, exportSelected=True, pr=True, typ="FBX export")
 
         if os.path.exists(path):
-            Dialogs.inform('Export SUCCEDE !')
+            Dialogs.inform('Export SUCCEEDED !')
         else:
             Dialogs.error('ERROR : Export FAILD !')

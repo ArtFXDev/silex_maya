@@ -134,6 +134,6 @@ class Export_ass(CommandBase):
         )
 
         if os.path.exists(path):
-            Dialogs.inform('Export SUCCEDE !')
+            Dialogs.inform('Export SUCCEEDED !')
         else:
             Dialogs.error('ERROR : Export FAILD !')

@@ -38,6 +38,6 @@ class Export_obj(CommandBase):
         cmds.file(path, exportSelected=True, pr=True, typ="OBJexport")
 
         if os.path.exists(path):
-            Dialogs.inform('Export SUCCEDE !')
+            Dialogs.inform('Export SUCCEEDED !')
         else:
             Dialogs.error('ERROR : Export FAILD !')
