@@ -31,3 +31,7 @@ class Utils:
 
         future.add_done_callback(callback)
         return future
+
+    @staticmethod
+    async def log(self, action_query, info):
+        await self.wrapped_execute(action_query, lambda: print(info))
