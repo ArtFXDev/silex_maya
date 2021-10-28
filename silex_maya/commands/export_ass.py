@@ -98,27 +98,27 @@ class Export_ass(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        def compute_mask():
-            options = parameters.get('options')
-            camera = bool(parameters.get('camera') != 'No camera')
-            light = parameters.get('lights')
-            shape = parameters.get('shapes')
-            shader = parameters.get('shaders')
-            override = parameters.get('override')
-            diver = parameters.get('diver')
-            filters = parameters.get('filters')
+        def compute_mask() -> int:
+            options: bool = parameters.get('options')
+            camera: bool = bool(parameters.get('camera') != 'No camera')
+            light: bool = parameters.get('lights')
+            shape: bool = parameters.get('shapes')
+            shader: bool = parameters.get('shaders')
+            override: bool = parameters.get('override')
+            diver: bool = parameters.get('diver')
+            filters: bool = parameters.get('filters')
 
             return 1*options + 2*camera + 4*light + 8*shape + \
                 16*shader + 32*override + 64*diver + 128*filters
 
-        path = parameters.get('file_path')
-        sel = parameters.get('selection')
-        Llinks = parameters.get('light')
-        Slinks = parameters.get('light')
-        Bbox = parameters.get('bounding_box')
-        cam = parameters.get('camera')
-        binary = parameters.get('binary_encoding')
-        mask = compute_mask()
+        path: str = parameters.get('file_path')
+        sel: str = parameters.get('selection')
+        Llinks: bool = parameters.get('light')
+        Slinks: bool = parameters.get('light')
+        Bbox: bool = parameters.get('bounding_box')
+        cam: str = parameters.get('camera')
+        binary: bool = parameters.get('binary_encoding')
+        mask: int = compute_mask()
 
         p = pathlib.path(path)
         cmds.workspace(fileRule=['ASS', p.parents[0]])

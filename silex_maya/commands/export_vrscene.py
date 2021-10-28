@@ -1,10 +1,9 @@
 from __future__ import annotations
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import SelectParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -39,7 +38,7 @@ class Export_vrscene(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        path = parameters.get('file_path')
+        path: str = parameters.get('file_path')
 
         cmds.file(path, options=True, force=True,
                   pr=True, ea=True, typ="V-Ray Scene")

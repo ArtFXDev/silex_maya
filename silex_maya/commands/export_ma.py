@@ -40,7 +40,7 @@ class Export_ma(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        path = parameters.get('file_path')
+        path: str = parameters.get('file_path')
 
         cmds.file(path, exportSelected=True, pr=True, typ="mayaAscii")
 

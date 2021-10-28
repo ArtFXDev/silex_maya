@@ -40,13 +40,13 @@ class Export_abc(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        path = parameters.get('file_path')
+        path: str = parameters.get('file_path')
 
-        start = "0"
-        end = "100"
-        root = str(cmds.ls(selection=True)[0])
+        start: int = 0
+        end: int = 100
+        root: str = str(cmds.ls(selection=True)[0])
 
-        command = "-frameRange " + start + " " + end + \
+        command: str = "-frameRange " + start + " " + end + \
             " -uvWrite -worldSpace " + root + " -file " + path
         cmds.AbcExport(j=command)
 

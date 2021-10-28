@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
@@ -35,16 +35,16 @@ class Save(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        async def get_scene_path():
+        async def get_scene_path() -> Tuple[str, str]:
             # task = await gazu.task.get_task(action_query.context_metadata.get("task_id", "ac0e79cf-e5ce-49ff-932f-6aed3d425e4a"))
             task_id: str = action_query.context_metadata.get("task_id", "none")
-            working_file_with_extension = await gazu.files.build_working_file_path(task_id)
+            working_file_with_extension: str = await gazu.files.build_working_file_path(task_id)
             if task_id == "none":
                 Dialogs().err("Invalid task_id !")
                 return -1, None
 
-            soft = await gazu.files.get_software_by_name("maya")
-            extension = soft.get("file_extension", ".no")
+            soft: str = await gazu.files.get_software_by_name("maya")
+            extension: str = soft.get("file_extension", ".no")
             extension = extension if '.' in extension else f".{extension}"
             working_file_with_extension += extension
             if extension == ".no":
@@ -62,15 +62,16 @@ class Save(CommandBase):
             if working_file_with_extension == -1 or not ext:
                 return
 
-            filename = os.path.basename(working_file_with_extension)
-            working_file_without_extension = os.path.splitext(filename)[0]
-            working_folders = os.path.dirname(working_file_with_extension)
+            filename: str = os.path.basename(working_file_with_extension)
+            working_file_without_extension: str = os.path.splitext(filename)[0]
+            working_folders: str = os.path.dirname(working_file_with_extension)
 
             # if file already exist
-            version = re.findall("[0-9]*$", working_file_without_extension)
+            version: str = re.findall(
+                "[0-9]*$", working_file_without_extension)
             # get last number of file name
             version = version[0] if len(version) > 0 else ""
-            zf = len(version)
+            zf: int = len(version)
             version = int(version)
 
             # error in future
@@ -78,7 +79,7 @@ class Save(CommandBase):
                 Dialogs().err("Failed to get version from regex")
                 return
 
-            file_without_version = re.findall(
+            file_without_version: str = re.findall(
                 "(?![0-9]*$).", working_file_without_extension)
             file_without_version = ''.join(file_without_version)
             while os.path.exists(working_file_with_extension):
