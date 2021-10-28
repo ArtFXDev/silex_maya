@@ -2,7 +2,6 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
-from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import SelectParameterMeta
 

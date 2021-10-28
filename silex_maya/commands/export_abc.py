@@ -2,9 +2,7 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
-from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import RangeParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -29,9 +27,13 @@ class Export_abc(CommandBase):
             "type": pathlib.Path,
             "value": None,
         },
-        "range": {
-            "label": "Range",
-            "type": RangeParameterMeta(1, 475, 1),
+        "start_frame": {
+            "label": "Start Frame",
+            "type": int,
+        },
+        "end_frame": {
+            "label": "End Frame",
+            "type": int,
         },
     }
 
@@ -42,8 +44,9 @@ class Export_abc(CommandBase):
 
         path: str = parameters.get('file_path')
 
-        start: int = 0
-        end: int = 100
+        start: int = parameters.get('start_frame')
+        end: int = parameters.get('end_frame')
+
         root: str = str(cmds.ls(selection=True)[0])
 
         command: str = "-frameRange " + start + " " + end + \
@@ -51,4 +54,6 @@ class Export_abc(CommandBase):
         cmds.AbcExport(j=command)
 
         if os.path.exists(path):
-            Dialogs.inform('Export succeded')
+            Dialogs.inform('Export SUCCEDE !')
+        else:
+            Dialogs.error('ERROR : Export FAILD !')
