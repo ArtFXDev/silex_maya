@@ -16,7 +16,7 @@ import os
 import pathlib
 
 
-class Export_vrscene(CommandBase):
+class ExportVrscene(CommandBase):
     """
     Export selection as obj
     """
@@ -36,13 +36,16 @@ class Export_vrscene(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        def export_vrscene(path: str) -> None:
+
+            cmds.file(path, options=True, force=True,
+                      pr=True, ea=True, typ="V-Ray Scene")
+
+            if os.path.exists(path):
+                Dialogs.inform('Export SUCCEEDED !')
+            else:
+                Dialogs.error('ERROR : Export FAILD !')
 
         path: str = parameters.get('file_path')
 
-        cmds.file(path, options=True, force=True,
-                  pr=True, ea=True, typ="V-Ray Scene")
-
-        if os.path.exists(path):
-            Dialogs.inform('Export SUCCEEDED !')
-        else:
-            Dialogs.error('ERROR : Export FAILD !')
+        await Utils.wrapped_execute(action_query, lambda: export_vrscene(path))
