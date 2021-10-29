@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import pathlib
 import typing
 from typing import Any, Dict, List
 
@@ -7,6 +8,7 @@ import gazu.task
 
 from silex_client.action.command_base import CommandBase, CommandParameters
 from silex_client.utils.log import logger
+from silex_client.utils.parameter_types import SelectParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -15,12 +17,17 @@ if typing.TYPE_CHECKING:
 
 class UploadPreview(CommandBase):
     """
-    Upload the
+    Upload the given preview to kitsu as a comment
     """
 
     parameters: CommandParameters = {
+        "preview_path": {"label": "Preview path", "type": str, "value": None},
         "description": {"label": "Description", "type": str, "value": None},
-        "status": {"label": "Task Status", "type": str, "value": "wfa"},
+        "status": {
+            "label": "Task Status",
+            "type": SelectParameterMeta("wfa", "done", "wip", "retake"),
+            "value": None,
+        },
     }
 
     required_metadata: List[str] = ["task_id"]
@@ -29,9 +36,15 @@ class UploadPreview(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        if not isinstance(upstream, str) or not os.path.isfile(upstream):
-            logger.error("The upstream file path %s is incorrect", upstream)
-            raise Exception(f"The upstream file path {upstream} is incorrect")
+        if not os.path.isfile(parameters["preview_path"]):
+            logger.error(
+                "The preview file path %s is incorrect", parameters["preview_path"]
+            )
+            raise Exception(
+                "The preview file path {} is incorrect".format(
+                    parameters["preview_path"]
+                )
+            )
 
         # Get current task
         task = await gazu.task.get_task(action_query.context_metadata["task_id"])
@@ -55,5 +68,5 @@ class UploadPreview(CommandBase):
             task,
             task_status,
             parameters["description"],
-            attachments=[upstream],
+            attachments=[parameters["preview_path"]],
         )
