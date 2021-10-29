@@ -35,7 +35,7 @@ class ExportFBX(CommandBase):
         # Get the output path
         directory = parameters.get("file_path")
         file_name = str(directory).split(os.path.sep)[-1]
-        export_path = f"{directory}{os.path.sep}{file_name}.obj"
+        export_path = f"{directory}{os.path.sep}{file_name}.fbx"
 
         # Test if the user selected something
         def get_selection():

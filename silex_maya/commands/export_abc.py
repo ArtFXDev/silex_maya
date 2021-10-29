@@ -41,6 +41,13 @@ class ExportABC(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        # Get the output path
+        directory = parameters.get("file_path")
+        file_name = str(directory).split(os.path.sep)[-1]
+        export_path = f"{directory}{os.path.sep}{file_name}.abc"
+        start: int = parameters.get("start_frame")
+        end: int = parameters.get("end_frame")
+
         def export_abc(start: int, end: int, path: str) -> None:
 
             root: str = cmds.ls(sl=True, l=True)[0]
@@ -48,22 +55,16 @@ class ExportABC(CommandBase):
             if root is None:
                 raise Exception("ERROR: No selection detected")
 
-            cmds.workspace(fileRule=["abc", path])
-
             cmds.AbcExport(
                 j="-uvWrite -dataFormat ogawa -root {} -frameRange {} {} -file {}".format(
                     root, start, end, path
                 )
             )
 
-            if os.path.exists(path):
-                Dialogs.inform("Export SUCCEEDED !")
-            else:
-                Dialogs.error("ERROR : Export FAILD !")
+        await Utils.wrapped_execute(
+            action_query, lambda: export_abc(start, end, export_path)
+        )
 
-        path: str = parameters.get("file_path")
-
-        start: int = parameters.get("start_frame")
-        end: int = parameters.get("end_frame")
-
-        await Utils.wrapped_execute(action_query, lambda: export_abc(start, end, path))
+        # Test if the export worked
+        if not os.path.exists(export_path):
+            raise Exception("An error occured when exporting to ABC")
