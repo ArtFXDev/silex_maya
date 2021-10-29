@@ -39,7 +39,8 @@ class ExportFbx(CommandBase):
             if not len(cmds.ls(sl=True)):
                 raise Exception('ERROR: No selection detected')
 
-            cmds.file(path, exportSelected=True, pr=True, typ="FBX export")
+            cmds.file(path, f=True, exportSelected=True,
+                      pr=True, typ="FBX export")
 
             if os.path.exists(path):
                 Dialogs.inform('Export SUCCEEDED !')

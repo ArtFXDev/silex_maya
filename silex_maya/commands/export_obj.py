@@ -40,7 +40,8 @@ class ExportObj(CommandBase):
                 raise Exception('ERROR: No selection detected')
 
             cmds.workspace(fileRule=['abc', path])
-            cmds.file(path, exportSelected=True, pr=True, typ="OBJexport")
+            cmds.file(path, f=True, exportSelected=True,
+                      pr=True, typ="OBJexport")
 
             if os.path.exists(path):
                 Dialogs.inform('Export SUCCEEDED !')
