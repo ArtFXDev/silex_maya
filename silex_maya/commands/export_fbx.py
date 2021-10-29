@@ -16,7 +16,7 @@ import os
 import pathlib
 
 
-class Export_fbx(CommandBase):
+class ExportFbx(CommandBase):
     """
     Export selection as obj
     """
@@ -33,11 +33,19 @@ class Export_fbx(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+
+        def export_fbx(path: str) -> None:
+
+            if not len(cmds.ls(sl=True)):
+                raise Exception('ERROR: No selection detected')
+
+            cmds.file(path, exportSelected=True, pr=True, typ="FBX export")
+
+            if os.path.exists(path):
+                Dialogs.inform('Export SUCCEEDED !')
+            else:
+                Dialogs.error('ERROR : Export FAILD !')
+
         path: str = parameters.get('file_path')
 
-        cmds.file(path, exportSelected=True, pr=True, typ="FBX export")
-
-        if os.path.exists(path):
-            Dialogs.inform('Export SUCCEEDED !')
-        else:
-            Dialogs.error('ERROR : Export FAILD !')
+        await Utils.wrapped_execute(action_query, lambda: export_fbx(path))

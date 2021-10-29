@@ -17,7 +17,7 @@ import os
 import pathlib
 
 
-class Export_ass(CommandBase):
+class ExportAss(CommandBase):
     """
     Export selection as obj
     """
@@ -96,6 +96,27 @@ class Export_ass(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        def export_ass(path: str, cam: str, sel: str, Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> None:
+
+            p = pathlib.path(path)
+            cmds.workspace(fileRule=['ASS', p.parents[0]])
+
+            cmds.arnoldExportAss(
+                f=path,
+                cam=cam,
+                s=sel,
+                lightLinks=Llinks,
+                shadowLinks=Slinks,
+                boundingBox=Bbox,
+                asciiAss=bool(1-binary),
+                mask=mask,
+            )
+
+            
+            if os.path.exists(path):
+                Dialogs.inform('Export SUCCEEDED !')
+            else:
+                Dialogs.error('ERROR : Export FAILD !')
 
         def compute_mask() -> int:
             options: bool = parameters.get('options')
@@ -119,21 +140,5 @@ class Export_ass(CommandBase):
         binary: bool = parameters.get('binary_encoding')
         mask: int = compute_mask()
 
-        p = pathlib.path(path)
-        cmds.workspace(fileRule=['ASS', p.parents[0]])
+        await Utils.wrapped_execute(action_query, lambda: export_ass(path, cam, sel, Llinks, Slinks, Bbox, binary, mask))
 
-        cmds.arnoldExportAss(
-            f=path,
-            cam=cam,
-            s=sel,
-            lightLinks=Llinks,
-            shadowLinks=Slinks,
-            boundingBox=Bbox,
-            asciiAss=bool(1-binary),
-            mask=mask,
-        )
-
-        if os.path.exists(path):
-            Dialogs.inform('Export SUCCEEDED !')
-        else:
-            Dialogs.error('ERROR : Export FAILD !')
