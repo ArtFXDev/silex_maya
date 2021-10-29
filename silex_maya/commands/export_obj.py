@@ -43,7 +43,7 @@ class ExportOBJ(CommandBase):
             return len(cmds.ls(sl=True))
 
         if not await Utils.wrapped_execute(action_query, get_selection):
-            raise Exception("ERROR: No selection detected")
+            raise Exception("Could not export the selection: No selection detected")
 
         # Export the selection in OBJ
         os.makedirs(export_path, exist_ok=True)
