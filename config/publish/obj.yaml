@@ -1,0 +1,13 @@
+obj:
+  steps:
+    export:
+      label: "Export"
+      index: 50
+      commands:
+        export_obj:
+          label: "Export in OBJ"
+          path: "silex_maya.commands.export_obj.ExportObj"
+          parameters:
+            file_path: !command-output "setup:build_output_path"
+
+
