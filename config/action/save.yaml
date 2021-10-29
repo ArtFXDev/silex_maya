@@ -3,7 +3,11 @@ save:
   steps:
     save:
       label: "Save"
-      index: 20
+      index: 50
       commands:
-        save:
+        build_work_path:
+          path: "silex_client.commands.build_work_path.BuildWorkPath"
+        save_scene:
           path: "silex_maya.commands.save.Save"
+          parameters:
+            file_path: !command-output "save:build_work_path"
