@@ -16,7 +16,11 @@ import os
 import pathlib
 
 
+<<<<<<< HEAD
 class ExportAbc(CommandBase):
+=======
+class ExportABC(CommandBase):
+>>>>>>> 689fea9 (Create the fbx and abc publish)
     """
     Export selection as obj
     """
@@ -42,6 +46,7 @@ class ExportAbc(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
+<<<<<<< HEAD
         def export_abc(start: int, end: int, path: str) -> None:
 
             root: str = cmds.ls(sl=True, l=True)[0]
@@ -60,8 +65,32 @@ class ExportAbc(CommandBase):
                 Dialogs.error('ERROR : Export FAILD !')
 
         path: str = parameters.get('file_path')
+=======
+        path: str = parameters.get("file_path")
+>>>>>>> 689fea9 (Create the fbx and abc publish)
 
-        start: int = parameters.get('start_frame')
-        end: int = parameters.get('end_frame')
+        start: int = parameters.get("start_frame")
+        end: int = parameters.get("end_frame")
 
+<<<<<<< HEAD
         await Utils.wrapped_execute(action_query, lambda: export_abc(start, end, path))
+=======
+        root: str = str(cmds.ls(selection=True)[0])
+
+        command: str = (
+            "-frameRange "
+            + start
+            + " "
+            + end
+            + " -uvWrite -worldSpace "
+            + root
+            + " -file "
+            + path
+        )
+        cmds.AbcExport(j=command)
+
+        if os.path.exists(path):
+            Dialogs.inform("Export SUCCEDE !")
+        else:
+            Dialogs.error("ERROR : Export FAILD !")
+>>>>>>> 689fea9 (Create the fbx and abc publish)

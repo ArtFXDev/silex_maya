@@ -1,11 +1,11 @@
-obj:
+fbx:
   steps:
     export:
       label: "Export"
       index: 50
       commands:
-        export_obj:
-          label: "Export in OBJ"
-          path: "silex_maya.commands.export_obj.ExportOBJ"
+        export_fbx:
+          label: "Export in FBX"
+          path: "silex_maya.commands.export_fbx.ExportFBX"
           parameters:
             file_path: !command-output "setup:build_output_path"

@@ -16,7 +16,11 @@ import os
 import pathlib
 
 
+<<<<<<< HEAD
 class ExportFbx(CommandBase):
+=======
+class ExportFBX(CommandBase):
+>>>>>>> 689fea9 (Create the fbx and abc publish)
     """
     Export selection as obj
     """
@@ -33,6 +37,10 @@ class ExportFbx(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+<<<<<<< HEAD
+=======
+        path: str = parameters.get("file_path")
+>>>>>>> 689fea9 (Create the fbx and abc publish)
 
         def export_fbx(path: str) -> None:
 
@@ -48,4 +56,11 @@ class ExportFbx(CommandBase):
 
         path: str = parameters.get('file_path')
 
+<<<<<<< HEAD
         await Utils.wrapped_execute(action_query, lambda: export_fbx(path))
+=======
+        if os.path.exists(path):
+            Dialogs.inform("Export SUCCEDE !")
+        else:
+            Dialogs.error("ERROR : Export FAILD !")
+>>>>>>> 689fea9 (Create the fbx and abc publish)

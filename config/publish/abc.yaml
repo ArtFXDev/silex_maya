@@ -4,8 +4,9 @@ obj:
       label: "Export"
       index: 50
       commands:
-        export_obj:
-          label: "Export in OBJ"
-          path: "silex_maya.commands.export_obj.ExportOBJ"
+        export_abc:
+          label: "Export in ABC"
+          path: "silex_maya.commands.export_abc.ExportABC"
+          ask_user: true
           parameters:
             file_path: !command-output "setup:build_output_path"

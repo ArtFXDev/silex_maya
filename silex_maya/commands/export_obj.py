@@ -16,7 +16,7 @@ import os
 import pathlib
 
 
-class ExportObj(CommandBase):
+class ExportOBJ(CommandBase):
     """
     Export selection as obj
     """
