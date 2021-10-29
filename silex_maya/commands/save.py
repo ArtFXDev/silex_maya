@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
@@ -9,15 +9,8 @@ from silex_client.action.command_base import CommandBase
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.dialogs import Dialogs
-
-import asyncio
 import os
-import gazu.files
-import gazu.task
 import maya.cmds as cmds
-import maya.mel as mel
-import re
 
 
 class Save(CommandBase):
@@ -26,70 +19,20 @@ class Save(CommandBase):
     """
 
     parameters = {
-        "filename": {"label": "filename", "type": str, "value": "", "hide": True}
+        "file_path": {"label": "filename", "type": str, "value": None, "hide": False}
     }
-    required_metadata = ['task_id']
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        def save(file_path: str):
+            if not os.path.exists(file_path):
+                os.makedirs(file_path)
 
-        async def get_scene_path() -> Tuple[str, str]:
-            # task = await gazu.task.get_task(action_query.context_metadata.get("task_id", "ac0e79cf-e5ce-49ff-932f-6aed3d425e4a"))
-            task_id: str = action_query.context_metadata.get("task_id", "none")
-            working_file_with_extension: str = await gazu.files.build_working_file_path(task_id)
-            if task_id == "none":
-                Dialogs().err("Invalid task_id !")
-                return -1, None
-
-            soft: str = await gazu.files.get_software_by_name("maya")
-            extension: str = soft.get("file_extension", ".no")
-            extension = extension if '.' in extension else f".{extension}"
-            working_file_with_extension += extension
-            if extension == ".no":
-                Dialogs().warn("Sofware not set in Kitsu, file extension will be invalid")
-                return -1, None
-
-            return working_file_with_extension, extension
-
-        def save():
-
-            # create recusively directory from path
-            working_file_with_extension, ext = asyncio.run(get_scene_path())
-
-            # error in future
-            if working_file_with_extension == -1 or not ext:
-                return
-
-            filename: str = os.path.basename(working_file_with_extension)
-            working_file_without_extension: str = os.path.splitext(filename)[0]
-            working_folders: str = os.path.dirname(working_file_with_extension)
-
-            # if file already exist
-            version: str = re.findall(
-                "[0-9]*$", working_file_without_extension)
-            # get last number of file name
-            version = version[0] if len(version) > 0 else ""
-            zf: int = len(version)
-            version = int(version)
-
-            # error in future
-            if version == "":
-                Dialogs().err("Failed to get version from regex")
-                return
-
-            file_without_version: str = re.findall(
-                "(?![0-9]*$).", working_file_without_extension)
-            file_without_version = ''.join(file_without_version)
-            while os.path.exists(working_file_with_extension):
-                version += 1
-                working_file_with_extension = os.path.join(
-                    working_folders, f"{file_without_version}{str(version).zfill(zf)}{ext}")
-
-            if not os.path.exists(working_folders):
-                os.makedirs(working_folders)
-
-            cmds.file(rename=working_file_with_extension)
+            cmds.file(rename=file_path)
             cmds.file(save=True)
-        await Utils.wrapped_execute(action_query, save)
+
+        await Utils.wrapped_execute(
+            action_query, save, file_path=parameters["file_path"]
+        )

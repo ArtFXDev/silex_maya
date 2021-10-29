@@ -8,8 +8,9 @@ proposal:
           label: "Capture thumbnail"
           path: "silex_maya.commands.capture_preview.CapturePreview"
         upload_thumbnail:
-          input_path: "preview:capture_thumbnail"
           label: "Upload thumbnail"
           path: "silex_maya.commands.upload_preview.UploadPreview"
+          parameters:
+            preview_path: !command-output "preview:capture_thumbnail"
           ask_user: true
 
