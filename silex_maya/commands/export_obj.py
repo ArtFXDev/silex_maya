@@ -62,13 +62,14 @@ class ExportOBJ(CommandBase):
         # Test if the export worked
         import time
         time.sleep(1)
+
         if not os.path.exists(temp_path):
             raise Exception("An error occured when exporting to OBJ")
 
         # Move to export destination
         async def save_from_temp():
-            export = pathlib.Path(export_path)
-            export_dir = export.parents[0]
+            export: str = pathlib.Path(export_path)
+            export_dir: str = export.parents[0]
 
             os.makedirs(export_dir, exist_ok=True)
             shutil.copy2(temp_path, export_path)
