@@ -22,9 +22,6 @@ class ExportABC(CommandBase):
     Export selection as obj
     """
 
-    min_time = cmds.playbackOptions(q=True, min=True)
-    max_time = cmds.playbackOptions(q=True, max=True)
-
     parameters = {
         "file_path": {
             "label": "File path",
@@ -34,12 +31,10 @@ class ExportABC(CommandBase):
         "start_frame": {
             "label": "Start Frame",
             "type": int,
-            "value": min_time
         },
         "end_frame": {
             "label": "End Frame",
             "type": int,
-            "value": max_time
         },
     }
 
