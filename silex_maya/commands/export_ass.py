@@ -15,6 +15,8 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
+import tempfile
+import shutil
 
 
 class ExportAss(CommandBase):
@@ -98,7 +100,7 @@ class ExportAss(CommandBase):
     ):
         def export_ass(path: str, cam: str, sel: str, Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> None:
 
-            p = pathlib.path(path)
+            p = pathlib.Path(path)
             cmds.workspace(fileRule=['ASS', p.parents[0]])
 
             cmds.arnoldExportAss(
@@ -111,12 +113,6 @@ class ExportAss(CommandBase):
                 asciiAss=bool(1-binary),
                 mask=mask,
             )
-
-            
-            if os.path.exists(path):
-                Dialogs.inform('Export SUCCEEDED !')
-            else:
-                Dialogs.error('ERROR : Export FAILD !')
 
         def compute_mask() -> int:
             options: bool = parameters.get('options')
@@ -131,7 +127,10 @@ class ExportAss(CommandBase):
             return 1*options + 2*camera + 4*light + 8*shape + \
                 16*shader + 32*override + 64*diver + 128*filters
 
-        path: str = parameters.get('file_path')
+        directory: str = parameters.get("file_path")
+        file_name: str = str(directory).split(os.path.sep)[-1]
+        temp_path: str = f"{tempfile.gettempdir()}{os.path.sep}{os.path.sep}{file_name}.ass"
+        export_path: str = f"{directory}{os.path.sep}{file_name}.ass"
         sel: str = parameters.get('selection')
         Llinks: bool = parameters.get('light')
         Slinks: bool = parameters.get('light')
@@ -140,5 +139,23 @@ class ExportAss(CommandBase):
         binary: bool = parameters.get('binary_encoding')
         mask: int = compute_mask()
 
-        await Utils.wrapped_execute(action_query, lambda: export_ass(path, cam, sel, Llinks, Slinks, Bbox, binary, mask))
+        await Utils.wrapped_execute(action_query, lambda: export_ass(temp_path, cam, sel, Llinks, Slinks, Bbox, binary, mask))
 
+        # Test if the export worked
+        import time
+        time.sleep(1)
+        if not os.path.exists(temp_path):
+            raise Exception("An error occured when exporting to OBJ")
+
+        # Move to export destination
+        async def save_from_temp():
+            export = pathlib.Path(export_path)
+            export_dir = export.parents[0]
+
+            os.makedirs(export_dir, exist_ok=True)
+            shutil.copy2(temp_path, export_path)
+            os.remove(temp_path)
+
+        await save_from_temp()
+
+        return export_path

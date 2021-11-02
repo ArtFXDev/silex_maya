@@ -8,18 +8,22 @@ from silex_client.action.command_base import CommandBase
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.dialogs import Dialogs
 from silex_maya.utils.utils import Utils
 
 import maya.cmds as cmds
 import os
 import pathlib
+import shutil
+import tempfile
 
 
 class ExportABC(CommandBase):
     """
     Export selection as obj
     """
+
+    min_time = cmds.playbackOptions(q=True, min=True)
+    max_time = cmds.playbackOptions(q=True, max=True)
 
     parameters = {
         "file_path": {
@@ -30,10 +34,12 @@ class ExportABC(CommandBase):
         "start_frame": {
             "label": "Start Frame",
             "type": int,
+            "value": min_time
         },
         "end_frame": {
             "label": "End Frame",
             "type": int,
+            "value": max_time
         },
     }
 
@@ -41,10 +47,11 @@ class ExportABC(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        # Get the output path
-        directory = parameters.get("file_path")
-        file_name = str(directory).split(os.path.sep)[-1]
-        export_path = f"{directory}{os.path.sep}{file_name}.abc"
+        # Get the output path and range variable
+        directory: str = parameters.get("file_path")
+        file_name: str = str(directory).split(os.path.sep)[-1]
+        temp_path: str = f"{tempfile.gettempdir()}{os.path.sep}{os.path.sep}{file_name}.abc"
+        export_path: str = f"{directory}{os.path.sep}{file_name}.abc"
         start: int = parameters.get("start_frame")
         end: int = parameters.get("end_frame")
 
@@ -62,9 +69,24 @@ class ExportABC(CommandBase):
             )
 
         await Utils.wrapped_execute(
-            action_query, lambda: export_abc(start, end, export_path)
+            action_query, lambda: export_abc(start, end, temp_path)
         )
 
         # Test if the export worked
-        if not os.path.exists(export_path):
-            raise Exception("An error occured when exporting to ABC")
+        import time
+        time.sleep(1)
+        if not os.path.exists(temp_path):
+            raise Exception("An error occured when exporting to OBJ")
+
+        # Move to export destination
+        async def save_from_temp():
+            export = pathlib.Path(export_path)
+            export_dir = export.parents[0]
+
+            os.makedirs(export_dir, exist_ok=True)
+            shutil.copy2(temp_path, export_path)
+            os.remove(temp_path)
+
+        await save_from_temp()
+
+        return export_path

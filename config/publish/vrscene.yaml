@@ -1,4 +1,4 @@
-obj:
+vrscene:
   steps:
     export:
       label: "Export"
