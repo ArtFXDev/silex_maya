@@ -13,7 +13,9 @@ setup(
     python_requires="==3.7.*",
     entry_points={
         "silex_action_config": [
-            "base=silex_maya.config.entry_point:action_entry_points",
+            "maya=silex_maya.config.entry_point:action_entry_points",
         ],
     },
+    package_data={"": ["*.yaml", "*.yml", ".env"]},
+    include_package_data=True,
 )
