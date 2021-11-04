@@ -5,8 +5,8 @@ vrscene:
       index: 50
       commands:
         export_abc:
-          label: "Export in ABC"
-          path: "silex_maya.commands.export_abc.ExportABC"
+          label: "Export in vrscene"
+          path: "silex_maya.commands.export_verscene.ExportVrscene"
           ask_user: true
           parameters:
             file_path: !command-output "setup:build_output_path"
