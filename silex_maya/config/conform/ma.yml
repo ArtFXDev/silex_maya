@@ -5,12 +5,12 @@ ma:
       index: 50
       commands:
         open:
-          label: "Open conformed scene"
+          label: "Open scene to conform"
           path: "silex_maya.commands.open.Open"
           parameters:
             file_path: !command-output "setup:get_conform_output:file_path"
-        conform_ma:
-          label: "Conform from maya scene"
-          path: "silex_maya.commands.conform_ma.ConformMaya"
-          ask_user: true
+            save: True
+        get_references:
+          label: "Get referenced files"
+          path: "silex_maya.commands.get_references.GetReferences"
 

@@ -5,6 +5,7 @@ from typing import Any, Dict
 import pathlib
 from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -24,7 +25,12 @@ class Open(CommandBase):
             "label": "filename",
             "type": pathlib.Path,
             "value": None,
-        }
+        },
+        "save": {
+            "label": "Save before opening",
+            "type": bool,
+            "value": True,
+        },
     }
 
     @CommandBase.conform_command()
@@ -38,9 +44,10 @@ class Open(CommandBase):
             )
 
         def open(file_path: str):
-            cmds.file(save=True)
-            cmds.file(file_path, o=True)
+            cmds.file(save=True, force=True)
+            cmds.file(file_path, o=True, force=True)
 
+        logger.info("Openning file %s", file_path)
         await Utils.wrapped_execute(
             action_query, open, file_path=parameters["file_path"]
         )
