@@ -20,6 +20,6 @@ def commands():
     """
     Set the environment variables for silex_maya
     """
-    env.SILEX_ACTION_CONFIG.prepend("{root}/config")
+    env.SILEX_ACTION_CONFIG.prepend("{root}/silex_maya/config")
     env.PYTHONPATH.append("{root}")
     env.PYTHONPATH.append("{root}/startup")
