@@ -41,10 +41,13 @@ class ExportOBJ(CommandBase):
     ):
 
         # Get the output path
-        directory: str = parameters.get("file_dir")
-        file_name: str = parameters.get("file_name")
+        directory: str = str(parameters.get("file_dir"))
+        file_name: str = str(parameters.get("file_name"))
+
+        # Check for extension
         if "." in file_name:
             file_name = file_name.split('.')[0]
+
         export_path: str = f"{directory}{os.path.sep}{file_name}.obj"
 
         # Test if the user selected something

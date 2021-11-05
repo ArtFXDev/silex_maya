@@ -15,8 +15,6 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
-import  gazu.files
-
 
 class ExportAss(CommandBase):
     """
@@ -132,8 +130,8 @@ class ExportAss(CommandBase):
             return 1*options + 2*camera + 4*light + 8*shape + \
                 16*shader + 32*override + 64*diver + 128*filters
 
-        directory: str = parameters.get("file_path")
-        file_name: str = parameters.get("file_name")
+        directory: str = str(parameters.get("file_dir"))
+        file_name: str = str(parameters.get("file_name"))
         
         # Check for extension
         if "." in file_name:

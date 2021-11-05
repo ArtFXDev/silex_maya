@@ -14,8 +14,6 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
-import gazu.files
-
 
 class ExportMa(CommandBase):
     """
@@ -51,8 +49,8 @@ class ExportMa(CommandBase):
 
             cmds.file(path, exportSelected=True, pr=True, typ="mayaAscii")
 
-        directory: str = parameters.get("file_path")
-        file_name: str =  parameters.get("file_name")
+        directory: str = str(parameters.get("file_dir"))
+        file_name: str = str(parameters.get("file_name"))
         
         # Check for extension
         if "." in file_name:

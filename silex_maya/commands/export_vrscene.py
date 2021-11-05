@@ -13,8 +13,6 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
-import gazu.files
-
 
 class ExportVrscene(CommandBase):
     """

@@ -19,6 +19,6 @@ vrscene:
           label: "Move"
           path: "silex_client.commands.move_file.MoveFile"
           parameters:
-            file_path: !command-output "export:export_abc:export_abc"
+            file_path: !command-output "export:export_vrscene"
             dst_dir: !command-output "setup:build_output_path:directory"
             from_temp: true
