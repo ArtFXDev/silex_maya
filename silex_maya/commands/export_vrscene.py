@@ -26,11 +26,16 @@ class ExportVrscene(CommandBase):
     cam_list.append('No camera')
 
     parameters = {
-        "file_path": {
-            "label": "File path",
+        "file_dir": {
+            "label": "File directory",
             "type": pathlib.Path,
             "value": None,
-        }
+        },
+        "file_name": {
+            "label": "File name",
+            "type": pathlib.Path,
+            "value": None,
+        },
     }
 
     @ CommandBase.conform_command()
@@ -38,11 +43,18 @@ class ExportVrscene(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        extension = await gazu.files.get_output_type_by_name("V-Ray Scene File")
-
         directory: str = parameters.get("file_path")
-        file_name: str = str(directory).split(os.path.sep)[-1]
-        export_path: str = f"{directory}{os.path.sep}{file_name}.{extension}"
+        file_name: str = parameters.get("file_name")
+        
+        # Check for extension
+        if "." in file_name:
+            file_name = file_name.split('.')[0]
+          
+        export_path: str = f"{directory}{os.path.sep}{file_name}.vrscene"
+
+        # Export the selection in OBJ
+        os.makedirs(directory, exist_ok=True)
+
 
         await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
                                     pr=True, ea=True, typ="V-Ray Scene")

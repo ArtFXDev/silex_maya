@@ -13,7 +13,6 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
-import gazu.files
 
 
 class ExportFBX(CommandBase):
@@ -22,8 +21,13 @@ class ExportFBX(CommandBase):
     """
 
     parameters = {
-        "file_path": {
-            "label": "File path",
+        "file_dir": {
+            "label": "File directory",
+            "type": pathlib.Path,
+            "value": None,
+        },
+        "file_name": {
+            "label": "File name",
             "type": pathlib.Path,
             "value": None,
         },
@@ -34,12 +38,15 @@ class ExportFBX(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        extension = await gazu.files.get_output_type_by_name("Autodesk FBX")
-
         # Get the output path
-        directory: str = parameters.get("file_path")
-        file_name: str = str(directory).split(os.path.sep)[-1]
-        export_path: str = f"{directory}{os.path.sep}{file_name}.{extension}"
+        directory: str = parameters.get("file_dir")
+        file_name: str = parameters.get("file_name")
+        
+        # Check for extension
+        if "." in file_name:
+            file_name = file_name.split('.')[0]
+          
+        export_path: str = f"{directory}{os.path.sep}{file_name}.fbx"
 
         # Test if the user selected something
         def get_selection():
@@ -48,6 +55,10 @@ class ExportFBX(CommandBase):
         if not await Utils.wrapped_execute(action_query, get_selection):
             raise Exception(
                 "Could not export the selection: No selection detected")
+
+        # Export the selection in OBJ
+        os.makedirs(directory, exist_ok=True)
+
 
         # Export the selection to temp folder
         await Utils.wrapped_execute(

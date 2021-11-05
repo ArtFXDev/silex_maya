@@ -22,8 +22,13 @@ class ExportABC(CommandBase):
     """
 
     parameters = {
-        "file_path": {
-            "label": "File path",
+        "file_dir": {
+            "label": "File directory",
+            "type": pathlib.Path,
+            "value": None,
+        },
+        "file_name": {
+            "label": "File name",
             "type": pathlib.Path,
             "value": None,
         },
@@ -42,13 +47,15 @@ class ExportABC(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        extension = await gazu.files.get_output_type_by_name("Alembic")
-
-
         # Get the output path and range variable
         directory: str = parameters.get("file_path")
-        file_name: str = str(directory).split(os.path.sep)[-1]
-        export_path: str = f"{directory}{os.path.sep}{file_name}.{extension}"
+        file_name: str = parameters.get("file_name")
+        
+        # Check for extension
+        if "." in file_name:
+            file_name = file_name.split('.')[0]
+          
+        export_path: str = f"{directory}{os.path.sep}{file_name}.abc"
         start: int = parameters.get("start_frame")
         end: int = parameters.get("end_frame")
 
@@ -64,6 +71,10 @@ class ExportABC(CommandBase):
             cmds.AbcExport(
                 j=f"-uvWrite -dataFormat ogawa -root {root} -frameRange {start} {end} -file {path}"
             )
+
+
+        # Export the selection in OBJ
+        os.makedirs(directory, exist_ok=True)
 
         await Utils.wrapped_execute(
             action_query, lambda: export_abc(start, end, export_path)

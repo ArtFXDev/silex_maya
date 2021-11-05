@@ -23,8 +23,13 @@ class ExportMa(CommandBase):
     """
 
     parameters = {
-        "file_path": {
-            "label": "File path",
+        "file_dir": {
+            "label": "File directory",
+            "type": pathlib.Path,
+            "value": None,
+        },
+        "file_name": {
+            "label": "File name",
             "type": pathlib.Path,
             "value": None,
         },
@@ -39,9 +44,6 @@ class ExportMa(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-
-        extension = await gazu.files.get_output_type_by_name("Maya ASCII")
-
         def export_ma(path: str) -> None:
 
             if not len(cmds.ls(sl=True)):
@@ -50,8 +52,17 @@ class ExportMa(CommandBase):
             cmds.file(path, exportSelected=True, pr=True, typ="mayaAscii")
 
         directory: str = parameters.get("file_path")
-        file_name: str = str(directory).split(os.path.sep)[-1]
-        export_path: str = f"{directory}{os.path.sep}{file_name}.{extension}"
+        file_name: str =  parameters.get("file_name")
+        
+        # Check for extension
+        if "." in file_name:
+            file_name = file_name.split('.')[0]
+          
+        export_path: str = f"{directory}{os.path.sep}{file_name}.ma"
+
+        # Export the selection in OBJ
+        os.makedirs(directory, exist_ok=True)
+
 
         await Utils.wrapped_execute(action_query, lambda: export_ma(export_path))
 

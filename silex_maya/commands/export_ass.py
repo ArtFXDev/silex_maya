@@ -27,8 +27,13 @@ class ExportAss(CommandBase):
     cam_list.append('No camera')
 
     parameters = {
-        "file_path": {
-            "label": "File path",
+        "file_dir": {
+            "label": "File directory",
+            "type": pathlib.Path,
+            "value": None,
+        },
+        "file_name": {
+            "label": "File name",
             "type": pathlib.Path,
             "value": None,
         },
@@ -98,8 +103,6 @@ class ExportAss(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        extension = await gazu.files.get_output_type_by_name("Maya ASCII")
-
         def export_ass(path: str, cam: str, sel: str, Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> None:
 
             p = pathlib.Path(path)
@@ -130,8 +133,13 @@ class ExportAss(CommandBase):
                 16*shader + 32*override + 64*diver + 128*filters
 
         directory: str = parameters.get("file_path")
-        file_name: str = str(directory).split(os.path.sep)[-1]
-        export_path: str = f"{directory}{os.path.sep}{file_name}.{extension}"
+        file_name: str = parameters.get("file_name")
+        
+        # Check for extension
+        if "." in file_name:
+            file_name = file_name.split('.')[0]
+          
+        export_path: str = f"{directory}{os.path.sep}{file_name}.ass"
         sel: str = parameters.get('selection')
         Llinks: bool = parameters.get('light')
         Slinks: bool = parameters.get('light')
@@ -139,6 +147,10 @@ class ExportAss(CommandBase):
         cam: str = parameters.get('camera')
         binary: bool = parameters.get('binary_encoding')
         mask: int = compute_mask()
+
+        # Export the selection in OBJ
+        os.makedirs(directory, exist_ok=True)
+
 
         await Utils.wrapped_execute(action_query, lambda: export_ass(export_path, cam, sel, Llinks, Slinks, Bbox, binary, mask))
 

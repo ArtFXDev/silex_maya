@@ -1,9 +1,10 @@
 from __future__ import annotations
+from genericpath import exists
 import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import entity
+from silex_client.utils.log import logger
 from silex_maya.utils.utils import Utils
 
 
@@ -14,7 +15,6 @@ if typing.TYPE_CHECKING:
 import maya.cmds as cmds
 import os
 import pathlib
-import gazu.files
 
 
 class ExportOBJ(CommandBase):
@@ -40,12 +40,12 @@ class ExportOBJ(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        extension = await gazu.files.get_output_type_by_name("Wavefront OBJ")
-
         # Get the output path
         directory: str = parameters.get("file_dir")
         file_name: str = parameters.get("file_name")
-        export_path: str = f"{directory}{os.path.sep}{file_name}.{extension}"
+        if "." in file_name:
+            file_name = file_name.split('.')[0]
+        export_path: str = f"{directory}{os.path.sep}{file_name}.obj"
 
         # Test if the user selected something
         def get_selection() -> int:
@@ -55,7 +55,10 @@ class ExportOBJ(CommandBase):
             raise Exception(
                 "Could not export the selection: No selection detected")
 
+
         # Export the selection in OBJ
+        os.makedirs(directory, exist_ok=True)
+
         await Utils.wrapped_execute(
             action_query,
             cmds.file,
