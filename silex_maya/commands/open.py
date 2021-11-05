@@ -2,6 +2,7 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
+import asyncio
 import pathlib
 from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
@@ -48,6 +49,9 @@ class Open(CommandBase):
             cmds.file(file_path, o=True, force=True)
 
         logger.info("Openning file %s", file_path)
-        await Utils.wrapped_execute(
-            action_query, open, file_path=parameters["file_path"]
+        await asyncio.wait_for(
+            await Utils.wrapped_execute(
+                action_query, open, file_path=parameters["file_path"]
+            ),
+            None,
         )

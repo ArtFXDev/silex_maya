@@ -28,6 +28,9 @@ class GetReferences(CommandBase):
             )
 
             referenced_files = []
+            if file_paths is None:
+                return referenced_files
+
             for attribute in file_paths[1::2]:
                 referenced_files.append((attribute, cmds.getAttr(attribute)))
             return referenced_files
