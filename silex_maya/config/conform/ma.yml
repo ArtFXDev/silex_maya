@@ -1,6 +1,6 @@
 ma:
   steps:
-    export:
+    conform:
       label: "Conform"
       index: 50
       commands:
@@ -13,4 +13,10 @@ ma:
         get_references:
           label: "Get referenced files"
           path: "silex_maya.commands.get_references.GetReferences"
-
+        conform_references:
+          label: "Conform references found"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            list: !command-output "conform:get_references:file_paths"
+            action: "conform"
+            parameter: "setup:get_conform_output:file_path"
