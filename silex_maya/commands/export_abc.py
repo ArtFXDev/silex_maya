@@ -13,18 +13,21 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
-import shutil
-import tempfile
 
 
 class ExportABC(CommandBase):
     """
-    Export selection as obj
+    Export selection as abc
     """
 
     parameters = {
-        "file_path": {
-            "label": "File path",
+        "file_dir": {
+            "label": "File directory",
+            "type": pathlib.Path,
+            "value": None,
+        },
+        "file_name": {
+            "label": "File name",
             "type": pathlib.Path,
             "value": None,
         },
@@ -42,47 +45,46 @@ class ExportABC(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+
         # Get the output path and range variable
-        directory: str = parameters.get("file_path")
-        file_name: str = str(directory).split(os.path.sep)[-1]
-        temp_path: str = f"{tempfile.gettempdir()}{os.path.sep}{os.path.sep}{file_name}.abc"
+        directory: str = str(parameters.get("file_dir"))
+        file_name: str = str(parameters.get("file_name"))
+        
+        # Check for extension
+        if "." in file_name:
+            file_name = file_name.split('.')[0]
+          
         export_path: str = f"{directory}{os.path.sep}{file_name}.abc"
         start: int = parameters.get("start_frame")
         end: int = parameters.get("end_frame")
 
         def export_abc(start: int, end: int, path: str) -> None:
 
+            # Get root
             root: str = cmds.ls(sl=True, l=True)[0]
 
+            # Check selected root
             if root is None:
-                raise Exception("ERROR: No selection detected")
+                raise Exception("ERROR: No root found")
 
             cmds.AbcExport(
-                j="-uvWrite -dataFormat ogawa -root {} -frameRange {} {} -file {}".format(
-                    root, start, end, path
-                )
+                j=f"-uvWrite -dataFormat ogawa -root {root} -frameRange {start} {end} -file {path}"
             )
 
+
+        # Export the selection in OBJ
+        os.makedirs(directory, exist_ok=True)
+
         await Utils.wrapped_execute(
-            action_query, lambda: export_abc(start, end, temp_path)
+            action_query, lambda: export_abc(start, end, export_path)
         )
 
         # Test if the export worked
         import time
         time.sleep(1)
 
-        if not os.path.exists(temp_path):
-            raise Exception("An error occured when exporting to OBJ")
-
-        # Move to export destination
-        async def save_from_temp():
-            export: str = pathlib.Path(export_path)
-            export_dir: str = export.parents[0]
-
-            os.makedirs(export_dir, exist_ok=True)
-            shutil.copy2(temp_path, export_path)
-            os.remove(temp_path)
-
-        await save_from_temp()
+        if not os.path.exists(export_path):
+            raise Exception(
+                f"An error occured while exporting {export_path} to alembic")
 
         return export_path

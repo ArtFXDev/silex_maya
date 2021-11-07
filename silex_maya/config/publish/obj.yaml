@@ -8,4 +8,16 @@ obj:
           label: "Export in OBJ"
           path: "silex_maya.commands.export_obj.ExportOBJ"
           parameters:
-            file_path: !command-output "setup:build_output_path"
+            file_dir: !command-output "setup:build_output_path:temp_directory"
+            file_name: !command-output "setup:build_output_path:file_name"
+    move:
+      label: "Move"
+      index: 60
+      commands:
+        move:
+          label: "Move"
+          path: "silex_client.commands.move_file.MoveFile"
+          parameters:
+            file_path: !command-output "export:export_obj"
+            dst_dir: !command-output "setup:build_output_path:directory"
+            from_temp: true
