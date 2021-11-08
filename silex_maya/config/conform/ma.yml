@@ -7,9 +7,9 @@ ma:
         input:
           path: "silex_client.commands.pass.Pass"
 
-    conform:
-      label: "Conform"
-      index: 50
+    conform_references:
+      label: "Conform references"
+      index: 20
       commands:
         open:
           label: "Open scene to conform"
@@ -24,6 +24,39 @@ ma:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            list: !command-output "conform:get_references:file_paths"
+            list: !command-output "conform_references:get_references:file_paths"
             action: "conform"
             parameter: "setup:get_conform_output:file_path"
+            output: "setup:append_conform_action"
+
+    conform_scene:
+      label: "Conform scene"
+      index: 30
+      commands:
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          tooltip: "Build the complete output path"
+          parameters:
+            output_type: "ma"
+          ask_user: true
+        save:
+          label: "Save the maya scene to the right location"
+          path: "silex_maya.commands.save.Save"
+          parameters:
+            file_path: !command-output "conform_scene:build_output_path:full_path"
+        open:
+          label: "Open back the original scene"
+          path: "silex_maya.commands.open.Open"
+          parameters:
+            file_path: !command-output "conform_references:open:old_path"
+            save: False
+
+    output:
+      index: 40
+      hide: true
+      commands:
+        output:
+          path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "input:input"

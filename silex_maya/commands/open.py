@@ -45,13 +45,19 @@ class Open(CommandBase):
             )
 
         def open(file_path: str):
-            cmds.file(save=True, force=True)
+            current_file = cmds.file(q=True, sn=True)
+            file_state = cmds.file(q=True, modified=True)
+            if file_state:
+                cmds.file(save=True, force=True)
             cmds.file(file_path, o=True, force=True)
+            return current_file
 
         logger.info("Openning file %s", file_path)
-        await asyncio.wait_for(
+        current_file = await asyncio.wait_for(
             await Utils.wrapped_execute(
                 action_query, open, file_path=parameters["file_path"]
             ),
             None,
         )
+
+        return {"old_path": current_file, "new_path": parameters["file_path"]}

@@ -31,7 +31,7 @@ class Save(CommandBase):
                 os.makedirs(file_path)
 
             cmds.file(rename=file_path)
-            cmds.file(save=True)
+            cmds.file(save=True, force=True)
 
         await Utils.wrapped_execute(
             action_query, save, file_path=parameters["file_path"]
