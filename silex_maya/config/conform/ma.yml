@@ -1,16 +1,21 @@
 ma:
   steps:
+    input:
+      index: 10
+      hide: True
+      commands:
+        input:
+          path: "silex_client.commands.pass.Pass"
+
     conform:
       label: "Conform"
       index: 50
       commands:
-        get_input:
-          path: "silex_client.commands.pass.Pass"
         open:
           label: "Open scene to conform"
           path: "silex_maya.commands.open.Open"
           parameters:
-            file_path: !command-output "conform:get_input"
+            file_path: !command-output "input:input"
             save: True
         get_references:
           label: "Get referenced files"
