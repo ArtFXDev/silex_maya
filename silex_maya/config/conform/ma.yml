@@ -40,6 +40,14 @@ ma:
           parameters:
             output_type: "ma"
           ask_user: true
+        repath_attributes:
+          label: "Repath attributes"
+          path: "silex_maya.commands.set_attributes.SetAttributes"
+          tooltip: "Set the new path on the attributes"
+          parameters:
+            attributes: !command-output "conform_references:get_references:attributes"
+            values: !command-output "conform_references:conform_references"
+          ask_user: true
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"

@@ -23,15 +23,16 @@ class GetReferences(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         def get_referenced_files():
-            file_paths = cmds.filePathEditor(
-                query=True, listFiles="", withAttribute=True
+            cmds.filePathEditor(rf=True)
+            attributes = cmds.filePathEditor(
+                query=True, listFiles="", attributeOnly=True
             )
 
             referenced_files = []
-            if file_paths is None:
+            if attributes is None:
                 return referenced_files
 
-            for attribute in file_paths[1::2]:
+            for attribute in attributes:
                 referenced_files.append((attribute, cmds.getAttr(attribute)))
             return referenced_files
 

@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from silex_maya.utils.utils import Utils
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -27,12 +28,13 @@ class Save(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         def save(file_path: str):
-            if not os.path.exists(file_path):
-                os.makedirs(file_path)
+            if not os.path.exists(os.path.basename(file_path)):
+                os.makedirs(os.path.basename(file_path))
 
             cmds.file(rename=file_path)
             cmds.file(save=True, force=True)
 
+        logger.info("Saving scene to %s", parameters["file_path"])
         await Utils.wrapped_execute(
             action_query, save, file_path=parameters["file_path"]
         )
