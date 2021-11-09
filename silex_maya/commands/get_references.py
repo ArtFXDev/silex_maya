@@ -33,6 +33,15 @@ class GetReferences(CommandBase):
                 return referenced_files
 
             for attribute in attributes:
+                # If the attribute is a maya reference
+                if cmds.nodeType(attribute) == "reference":
+                    referenced_files.append(
+                        (attribute, cmds.referenceQuery(attribute, filename=True))
+                    )
+                    continue
+                # If the attribute if from an other referenced scene
+                if cmds.referenceQuery(attribute, isNodeReferenced=True):
+                    continue
                 referenced_files.append((attribute, cmds.getAttr(attribute)))
             return referenced_files
 

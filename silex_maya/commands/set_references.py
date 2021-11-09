@@ -4,7 +4,6 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
 from silex_client.utils.datatypes import CommandOutput
 
 # Forward references
@@ -14,9 +13,9 @@ if typing.TYPE_CHECKING:
 import maya.cmds as cmds
 
 
-class SetAttributes(CommandBase):
+class SetReferences(CommandBase):
     """
-    Set the attribute on given list of attributes
+    Repath the given references
     """
 
     parameters = {
@@ -37,21 +36,33 @@ class SetAttributes(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         values = []
+        # TODO: This should be done in the get_value method of the ParameterBuffer
         for value in parameters["values"]:
             if isinstance(value, CommandOutput):
                 value = value.get_value(action_query)
             values.append(value)
 
-        def set_attribute(attributes, values):
+        # Define the function that will repath all the references
+        def set_references(attributes, values):
             new_values = []
             for index, attribute in enumerate(attributes):
+                # If the attribute is a maya reference
+                if cmds.nodeType(attribute) == "reference":
+                    cmds.file(values[index], loadReference=attribute)
+                    continue
+                # If the attribute if from an other referenced scene
+                if cmds.referenceQuery(attribute, isNodeReferenced=True):
+                    continue
+
+                # If it is just a file node or a texture...
                 cmds.setAttr(attribute, values[index], type="string")
                 new_values.append(values[index])
 
             cmds.filePathEditor(rf=True)
             return new_values
 
+        # Execute the function in the main thread
         new_values = await Utils.wrapped_execute(
-            action_query, set_attribute, parameters["attributes"], values
+            action_query, set_references, parameters["attributes"], values
         )
         return await new_values

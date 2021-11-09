@@ -44,7 +44,7 @@ ma:
           ask_user: true
         repath_attributes:
           label: "Repath attributes"
-          path: "silex_maya.commands.set_attributes.SetAttributes"
+          path: "silex_maya.commands.set_references.SetReferences"
           tooltip: "Set the new path on the attributes"
           parameters:
             attributes: !command-output "conform_references:get_references:attributes"
