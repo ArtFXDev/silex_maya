@@ -2,6 +2,7 @@ import asyncio
 import maya.utils as utils
 from typing import Callable
 from silex_client.utils.log import logger
+from silex_client.core.context import Context
 from concurrent import futures
 
 
@@ -13,9 +14,11 @@ class Utils:
 
         def wrapped_function():
             result = maya_function(*args, **kwargs)
-            future.set_result(result)
-            # TODO: Figure out why when we remove this log, the future takes ages to get set
-            logger.debug("Wrapped function executed %s", maya_function)
+
+            async def set_future():
+                future.set_result(result)
+
+            Context.get().event_loop.register_task(set_future())
 
         utils.executeDeferred(wrapped_function)
 

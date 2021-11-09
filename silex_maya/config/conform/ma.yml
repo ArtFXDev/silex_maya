@@ -38,7 +38,9 @@ ma:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
-            output_type: "ma"
+            output_type:
+              value: "ma"
+              hide: true
           ask_user: true
         repath_attributes:
           label: "Repath attributes"

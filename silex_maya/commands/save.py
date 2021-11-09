@@ -28,13 +28,13 @@ class Save(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         def save(file_path: str):
-            if not os.path.exists(os.path.basename(file_path)):
-                os.makedirs(os.path.basename(file_path))
-
             cmds.file(rename=file_path)
             cmds.file(save=True, force=True)
 
-        logger.info("Saving scene to %s", parameters["file_path"])
-        await Utils.wrapped_execute(
-            action_query, save, file_path=parameters["file_path"]
-        )
+        file_path = parameters["file_path"]
+        if os.path.splitext(file_path)[1] != ".ma":
+            file_path = f"{os.path.splitext(file_path)[0]}.ma"
+
+        logger.info("Saving scene to %s", file_path)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        await Utils.wrapped_execute(action_query, save, file_path=file_path)

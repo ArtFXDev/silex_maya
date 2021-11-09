@@ -38,26 +38,31 @@ class Open(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         file_path = parameters["file_path"]
-        if not os.path.exists(file_path):
-            raise Exception(
-                "Could not open the file {file_path}: The file does not exists"
-            )
 
-        def open(file_path: str):
-            current_file = cmds.file(q=True, sn=True)
-            file_state = cmds.file(q=True, modified=True)
-            if file_state:
-                cmds.file(save=True, force=True)
-            cmds.file(file_path, o=True, force=True)
-            return current_file
-
-        logger.info("Openning file %s", file_path)
-        import importlib
-
-        importlib.reload(utils)
+        # First get the current file name
         current_file = await utils.Utils.wrapped_execute(
-            action_query, open, file_path=parameters["file_path"]
+            action_query, cmds.file, q=True, sn=True
         )
         current_file = await current_file
+
+        # Test if the scene that we have to open exists
+        if not os.path.exists(file_path):
+            logger.error(
+                "Could not open the file %s: The file does not exists", file_path
+            )
+            return {"old_path": current_file, "new_path": current_file}
+
+        # Define the function that will open the scene
+        def open(file_path: str):
+            file_state = cmds.file(q=True, modified=True)
+            current_file = cmds.file(q=True, sn=True)
+            # Save the current scene before openning a new one
+            if file_state and current_file:
+                cmds.file(save=True, force=True)
+            cmds.file(file_path, o=True, force=True)
+
+        # Execute the open function in the main thread
+        logger.info("Openning file %s", file_path)
+        await utils.Utils.wrapped_execute(action_query, open, file_path=file_path)
 
         return {"old_path": current_file, "new_path": parameters["file_path"]}
