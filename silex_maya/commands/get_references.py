@@ -15,7 +15,7 @@ import maya.cmds as cmds
 
 class GetReferences(CommandBase):
     """
-    Move the maya file and its dependencies into the pipeline file structure
+    Find all the referenced files, including textures, scene references...
     """
 
     @CommandBase.conform_command()

@@ -47,17 +47,16 @@ class Open(CommandBase):
 
         # Test if the scene that we have to open exists
         if not os.path.exists(file_path):
-            logger.error(
-                "Could not open the file %s: The file does not exists", file_path
-            )
+            logger.error("Could not open %s: The file does not exists", file_path)
             return {"old_path": current_file, "new_path": current_file}
 
         # Define the function that will open the scene
         def open(file_path: str):
+            # Check if there is some modifications to save
             file_state = cmds.file(q=True, modified=True)
             current_file = cmds.file(q=True, sn=True)
             # Save the current scene before openning a new one
-            if file_state and current_file:
+            if file_state and current_file and parameters["save"]:
                 cmds.file(save=True, force=True)
             cmds.file(file_path, o=True, force=True)
 
