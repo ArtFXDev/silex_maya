@@ -41,8 +41,8 @@ class ExportVrscene(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
 
-        directory: str = parameters.get("file_path")
-        file_name: str = parameters.get("file_name")
+        directory: str = str(parameters.get("file_dir"))
+        file_name: str = str(parameters.get("file_name"))
         
         # Check for extension
         if "." in file_name:
