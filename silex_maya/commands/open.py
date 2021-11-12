@@ -46,7 +46,7 @@ class Open(CommandBase):
         current_file = await current_file
 
         # Test if the scene that we have to open exists
-        if not os.path.exists(file_path):
+        if not os.path.exists(file_path) or not os.path.isabs(file_path):
             logger.error("Could not open %s: The file does not exists", file_path)
             return {"old_path": current_file, "new_path": current_file}
 

@@ -38,3 +38,5 @@ class Save(CommandBase):
         logger.info("Saving scene to %s", file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         await Utils.wrapped_execute(action_query, save, file_path=file_path)
+
+        return {"new_path": file_path}

@@ -49,7 +49,6 @@ ma:
           parameters:
             attributes: !command-output "conform_references:get_references:attributes"
             values: !command-output "conform_references:conform_references"
-          ask_user: true
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
@@ -69,4 +68,4 @@ ma:
         output:
           path: "silex_client.commands.pass.Pass"
           parameters:
-            input: !command-output "input:input"
+            input: !command-output "conform_scene:save:new_path"
