@@ -8,7 +8,7 @@ ma:
           path: "silex_client.commands.pass.Pass"
 
     conform_references:
-      label: "Conform references"
+      label: "Conform Maya scene's references"
       index: 20
       commands:
         open:
@@ -30,7 +30,7 @@ ma:
             output: "setup:append_conform_action"
 
     conform_scene:
-      label: "Conform scene"
+      label: "Conform Maya scene"
       index: 30
       commands:
         build_output_path:
