@@ -33,7 +33,7 @@ class GetReferences(CommandBase):
         new_parameter = ParameterBuffer(
             type=pathlib.Path,
             name="new_path",
-            label=f"The file {old_path} is not reachable, insert an other path",
+            label=f"New path",
         )
         # Prompt the user to get the new path
         file_path = await self.prompt_user(
@@ -78,7 +78,7 @@ class GetReferences(CommandBase):
         for attribute, file_path in await referenced_files:
             frame_set = fileseq.FrameSet(0)
             # Make sure the file path leads to a reachable file
-            while not file_path.exists() or file_path.is_absolute():
+            while not file_path.exists() or not file_path.is_absolute():
                 logger.warning(
                     "Could not reach the file %s at %s", file_path, attribute
                 )
@@ -99,5 +99,6 @@ class GetReferences(CommandBase):
 
         return {
             "attributes": [file[0] for file in verified_referenced_files],
-            "files": [{"file_paths": file[1], "frame_sets": file[2]} for file in verified_referenced_files],
+            "file_paths": [file[1] for file in verified_referenced_files],
+            "frame_sets": [file[2] for file in verified_referenced_files],
         }
