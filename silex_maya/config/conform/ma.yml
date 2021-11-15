@@ -15,7 +15,7 @@ ma:
           label: "Open scene to conform"
           path: "silex_maya.commands.open.Open"
           parameters:
-            file_path: !command-output "input:input"
+            file_path: !command-output "input:input:file_paths"
             save: True
         get_references:
           label: "Get referenced files"
@@ -24,7 +24,7 @@ ma:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            list: !command-output "conform_references:get_references:file_paths"
+            list: !command-output "conform_references:get_references:files"
             action: "conform"
             parameter: "setup:get_conform_output:file_path"
             output: "setup:append_conform_action"

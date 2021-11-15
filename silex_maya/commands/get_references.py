@@ -99,6 +99,5 @@ class GetReferences(CommandBase):
 
         return {
             "attributes": [file[0] for file in verified_referenced_files],
-            "file_paths": [file[1] for file in verified_referenced_files],
-            "frame_sets": [file[2] for file in verified_referenced_files],
+            "files": [{"file_paths": file[1], "frame_sets": file[2]} for file in verified_referenced_files],
         }
