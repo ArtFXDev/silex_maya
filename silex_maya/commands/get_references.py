@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import fileseq
 import pathlib
 import typing
@@ -23,9 +22,7 @@ class GetReferences(CommandBase):
     Find all the referenced files, including textures, scene references...
     """
 
-    async def _prompt_new_path(
-        self, action_query: ActionQuery, old_path: pathlib.Path
-    ) -> pathlib.Path:
+    async def _prompt_new_path(self, action_query: ActionQuery) -> pathlib.Path:
         """
         Helper to prompt the user for a new path and wait for its response
         """
@@ -82,7 +79,7 @@ class GetReferences(CommandBase):
                 logger.warning(
                     "Could not reach the file %s at %s", file_path, attribute
                 )
-                file_path = await self._prompt_new_path(action_query, file_path)
+                file_path = await self._prompt_new_path(action_query)
 
             # Look for a file sequence
             for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):

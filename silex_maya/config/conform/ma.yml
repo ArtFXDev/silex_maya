@@ -25,7 +25,10 @@ ma:
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             list: !command-output "conform_references:get_references:file_paths"
-            action: "conform"
+            action: 
+              - "conform"
+            category:
+              - "action"
             parameter: "setup:get_conform_output:file_path"
             label_key: "file_paths"
             output: "setup:append_conform_action"
