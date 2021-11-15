@@ -24,12 +24,12 @@ ma:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            list: !command-output "conform_references:get_references:file_paths"
-            action: 
+            values: !command-output "conform_references:get_references:file_paths"
+            actions: 
               - "conform"
-            category:
+            categories:
               - "action"
-            parameter: "setup:get_conform_output:file_path"
+            parameter: "setup:get_conform_output:file_paths"
             label_key: "file_paths"
             output: "setup:append_conform_action"
 
