@@ -11,7 +11,7 @@ abc:
           parameters:
             file_dir: !command-output "setup:build_output_path:temp_directory"
             file_name: !command-output "setup:build_output_path:file_name"
-            
+
     move:
       label: "Move"
       index: 60

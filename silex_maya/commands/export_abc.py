@@ -3,6 +3,9 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.log import logger
+
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -13,6 +16,7 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
+import gazu
 
 
 class ExportABC(CommandBase):
@@ -31,60 +35,78 @@ class ExportABC(CommandBase):
             "type": pathlib.Path,
             "value": None,
         },
-        "start_frame": {
-            "label": "Start Frame",
-            "type": int,
-        },
-        "end_frame": {
-            "label": "End Frame",
-            "type": int,
-        },
+        "timeline_as_framerange": { "label": "Take timeline as frame-range?", "type": bool, "value": False },
+        "frame_range": {
+            "label": "Frame Range",
+            "type": IntArrayParameterMeta(2),
+            "value": [0, 0]
+        }
     }
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-
-        # Get the output path and range variable
-        directory: str = str(parameters.get("file_dir"))
-        file_name: str = str(parameters.get("file_name"))
         
-        # Check for extension
-        if "." in file_name:
-            file_name = file_name.split('.')[0]
-          
-        export_path: str = f"{directory}{os.path.sep}{file_name}.abc"
-        start: int = parameters.get("start_frame")
-        end: int = parameters.get("end_frame")
+        # get select objects
+        def select_objects():
+            # get current selection 
+            selected = cmds.ls(sl=True,long=True) or []
+            selected.sort(key=len, reverse=True) # reverse
+            return selected
 
-        def export_abc(start: int, end: int, path: str) -> None:
-
-            # Get root
-            root: str = cmds.ls(sl=True, l=True)[0]
-
+        # export abc method for wrapped execute
+        def export_abc(start: int, end: int, path: str, obj):
             # Check selected root
-            if root is None:
+            if obj is None:
                 raise Exception("ERROR: No root found")
+            logger.info(f"export : {obj}")
 
             cmds.AbcExport(
-                j=f"-uvWrite -dataFormat ogawa -root {root} -frameRange {start} {end} -file {path}"
+                j=f"-uvWrite -dataFormat ogawa -root {obj} -frameRange {start} {end} -file {path}"
             )
 
+        # Get the output path and range variable
+        directory = parameters.get("file_dir")
+        file_name = parameters.get("file_name")
+        start_frame = parameters.get("frame_range")[0]
+        end_frame = parameters.get("frame_range")[1]
+        used_timeline = parameters.get("timeline_as_framerange")
 
-        # Export the selection in OBJ
+        # authorized type
+        authorized_type = ["transform", "mesh", "camera"]
+        
+        # list of path to return
+        to_return_paths = []
+
+        # Set frame range
+        if used_timeline:
+            start_frame = cmds.playbackOptions(minTime=True, query=True)
+            end_frame = cmds.playbackOptions(maxTime=True, query=True)
+        
+        # get selected objects
+        selected = await Utils.wrapped_execute(action_query, lambda: select_objects())
+        selected = await selected
+
+        # create abc dir
         os.makedirs(directory, exist_ok=True)
+        
+        for obj in selected:
+            name = obj.split("|")[-1]
+            type = cmds.objectType(name)
+            if type not in authorized_type:
+                continue
 
-        await Utils.wrapped_execute(
-            action_query, lambda: export_abc(start, end, export_path)
-        )
+            # compute path
+            export_path = directory / f"{file_name}_{name}"
+            extension = await gazu.files.get_output_type_by_name("abc")
+            export_path = export_path.with_suffix(f".{extension['short_name']}")
 
-        # Test if the export worked
-        import time
-        time.sleep(1)
+            # add path to return list
+            to_return_paths.append(str(export_path))
+            
+            await Utils.wrapped_execute(
+                action_query, lambda: export_abc(start_frame, end_frame, export_path, name)
+            )
 
-        if not os.path.exists(export_path):
-            raise Exception(
-                f"An error occured while exporting {export_path} to alembic")
-
-        return export_path
+        return to_return_paths
