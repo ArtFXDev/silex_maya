@@ -4,7 +4,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.datatypes import CommandOutput
+from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -29,40 +29,52 @@ class SetReferences(CommandBase):
             "type": list,
             "value": None,
         },
+        "indexes": {
+            "label": "Indexes",
+            "type": list,
+            "value": None,
+        },
     }
 
     @CommandBase.conform_command()
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
+        attributes = parameters["attributes"]
+        indexes = parameters["indexes"]
+
         values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
         for value in parameters["values"]:
-            if isinstance(value, CommandOutput):
-                value = value.get_value(action_query)
+            value = value.get_value(action_query)[0]
+            value = value.get_value(action_query)
             values.append(value)
 
         # Define the function that will repath all the references
-        def set_references(attributes, values):
-            new_values = []
-            for index, attribute in enumerate(attributes):
-                # If the attribute is a maya reference
-                if cmds.nodeType(attribute) == "reference":
-                    cmds.file(values[index], loadReference=attribute)
-                    continue
-                # If the attribute if from an other referenced scene
-                if cmds.referenceQuery(attribute, isNodeReferenced=True):
-                    continue
+        def set_reference(attribute, value):
+            # If the attribute is a maya reference
+            if cmds.nodeType(attribute) == "reference":
+                cmds.file(value, loadReference=attribute)
+                return value
+            # If the attribute if from an other referenced scene
+            if cmds.referenceQuery(attribute, isNodeReferenced=True):
+                return ""
 
-                # If it is just a file node or a texture...
-                cmds.setAttr(attribute, values[index], type="string")
-                new_values.append(values[index])
-
-            cmds.filePathEditor(rf=True)
-            return new_values
+            # If it is just a file node or a texture...
+            cmds.setAttr(attribute, value, type="string")
+            return value
 
         # Execute the function in the main thread
-        new_values = await Utils.wrapped_execute(
-            action_query, set_references, parameters["attributes"], values
-        )
-        return await new_values
+        new_values = []
+        for attribute, index, value in zip(attributes, indexes, values):
+            print(attribute)
+            print(index)
+            print(value)
+            value = value[index]
+            new_value = await Utils.wrapped_execute(
+                action_query, set_reference, attribute, value
+            )
+            logger.info("Attribute %s set to %s", attribute, value)
+            new_values.append(await new_value)
+
+        return new_values

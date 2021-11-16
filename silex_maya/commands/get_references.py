@@ -65,11 +65,9 @@ class GetReferences(CommandBase):
 
         # Define the function to test if an attribute might return a file sequence or not
         def test_possible_sequence(attribute):
-            print(attribute)
             # Test the parameters for a file node:
             if cmds.nodeType(attribute) == "file":
                 node = ".".join(attribute.split(".")[:-1])
-                print(node)
                 if cmds.getAttr(f"{node}.uvTilingMode") != 0:
                     return True
                 if cmds.getAttr(f"{node}.useFrameExtension") == 1:
@@ -94,6 +92,8 @@ class GetReferences(CommandBase):
                 )
                 file_path = await self._prompt_new_path(action_query)
 
+            index = -1
+
             # Test in the main thread if the current attribute might point to a sequence
             is_possible_sequence = await Utils.wrapped_execute(
                 action_query, test_possible_sequence, attribute
@@ -104,14 +104,16 @@ class GetReferences(CommandBase):
                     # Find the file sequence that correspond the to file we are looking for
                     sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
                     if file_path in sequence_list and len(sequence_list) > 1:
+                        index = sequence_list.index(file_path)
                         file_path = sequence_list
                         break
 
             # Append to the verified path
-            verified_referenced_files.append((attribute, file_path))
+            verified_referenced_files.append((attribute, file_path, index))
             logger.info("Referenced file %s found at %s", file_path, attribute)
 
         return {
-            "attributes": [file[0] for file in verified_referenced_files],
-            "file_paths": [file[1] for file in verified_referenced_files],
+            "attributes": [ref[0] for ref in verified_referenced_files],
+            "file_paths": [ref[1] for ref in verified_referenced_files],
+            "indexes": [ref[2] for ref in verified_referenced_files],
         }
