@@ -1,9 +1,10 @@
 from __future__ import annotations
 from silex_maya.utils.utils import Utils
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
+from silex_client.action.parameter_types import ListParameterMeta
 from silex_client.utils.log import logger
 
 # Forward references
@@ -21,17 +22,17 @@ class SetReferences(CommandBase):
     parameters = {
         "attributes": {
             "label": "Attributes",
-            "type": list,
+            "type": ListParameterMeta(str),
             "value": None,
         },
         "values": {
             "label": "Values",
-            "type": list,
+            "type": ListParameterMeta(str),
             "value": None,
         },
         "indexes": {
             "label": "Indexes",
-            "type": list,
+            "type": ListParameterMeta(int),
             "value": None,
         },
     }
@@ -40,8 +41,8 @@ class SetReferences(CommandBase):
     async def __call__(
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
-        attributes = parameters["attributes"]
-        indexes = parameters["indexes"]
+        attributes: List[str] = parameters["attributes"]
+        indexes: List[str] = parameters["indexes"]
 
         values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
@@ -67,9 +68,6 @@ class SetReferences(CommandBase):
         # Execute the function in the main thread
         new_values = []
         for attribute, index, value in zip(attributes, indexes, values):
-            print(attribute)
-            print(index)
-            print(value)
             value = value[index]
             new_value = await Utils.wrapped_execute(
                 action_query, set_reference, attribute, value
