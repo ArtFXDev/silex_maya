@@ -4,7 +4,7 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_types import ListParameterMeta
+from silex_client.utils.parameter_types import ListParameterMeta
 from silex_client.utils.log import logger
 
 # Forward references
