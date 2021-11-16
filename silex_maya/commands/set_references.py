@@ -4,7 +4,7 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import ListParameterMeta
+from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
 from silex_client.utils.log import logger
 
 # Forward references
@@ -27,7 +27,7 @@ class SetReferences(CommandBase):
         },
         "values": {
             "label": "Values",
-            "type": ListParameterMeta(str),
+            "type": ListParameterMeta(AnyParameter),
             "value": None,
         },
         "indexes": {
@@ -47,7 +47,11 @@ class SetReferences(CommandBase):
         values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
         for value in parameters["values"]:
+            print("AAAAAAAAAAAAAAA")
+            print(value)
+            print(value.get_value(action_query))
             value = value.get_value(action_query)[0]
+            print(value.get_value(action_query))
             value = value.get_value(action_query)
             values.append(value)
 
