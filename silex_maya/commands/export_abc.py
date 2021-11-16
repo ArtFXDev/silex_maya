@@ -62,9 +62,7 @@ class ExportABC(CommandBase):
                 raise Exception("ERROR: No root found")
             logger.info(f"export : {obj}")
 
-            cmds.AbcExport(
-                j=f"-uvWrite -dataFormat ogawa -root {obj} -frameRange {start} {end} -file {path}"
-            )
+            cmds.AbcExport(j=f"-uvWrite -dataFormat ogawa -root {obj} -frameRange {start} {end} -file {path}")
 
         # Get the output path and range variable
         directory = parameters.get("file_dir")
