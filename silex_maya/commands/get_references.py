@@ -63,6 +63,20 @@ class GetReferences(CommandBase):
                 referenced_files.append((attribute, pathlib.Path(file_path)))
             return referenced_files
 
+        # Define the function to test if an attribute might return a file sequence or not
+        def test_possible_sequence(attribute):
+            print(attribute)
+            # Test the parameters for a file node:
+            if cmds.nodeType(attribute) == "file":
+                node = ".".join(attribute.split(".")[:-1])
+                print(node)
+                if cmds.getAttr(f"{node}.uvTilingMode") != 0:
+                    return True
+                if cmds.getAttr(f"{node}.useFrameExtension") == 1:
+                    return True
+
+            return False
+
         # Execute the get_referenced_files in the main thread
         referenced_files = await Utils.wrapped_execute(
             action_query, get_referenced_files
@@ -73,7 +87,6 @@ class GetReferences(CommandBase):
 
         # Check if the referenced files are reachable and prompt the user if not
         for attribute, file_path in await referenced_files:
-            frame_set = fileseq.FrameSet(0)
             # Make sure the file path leads to a reachable file
             while not file_path.exists() or not file_path.is_absolute():
                 logger.warning(
@@ -81,21 +94,24 @@ class GetReferences(CommandBase):
                 )
                 file_path = await self._prompt_new_path(action_query)
 
-            # Look for a file sequence
-            for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-                # Find the file sequence that correspond the to file we are looking for
-                sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-                if file_path in sequence_list and len(sequence_list) > 1:
-                    frame_set = file_sequence.frameSet()
-                    file_path = sequence_list
-                    break
+            # Test in the main thread if the current attribute might point to a sequence
+            is_possible_sequence = await Utils.wrapped_execute(
+                action_query, test_possible_sequence, attribute
+            )
+            if await is_possible_sequence:
+                # Look for a file sequence
+                for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+                    # Find the file sequence that correspond the to file we are looking for
+                    sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+                    if file_path in sequence_list and len(sequence_list) > 1:
+                        file_path = sequence_list
+                        break
 
             # Append to the verified path
-            verified_referenced_files.append((attribute, file_path, frame_set))
+            verified_referenced_files.append((attribute, file_path))
             logger.info("Referenced file %s found at %s", file_path, attribute)
 
         return {
             "attributes": [file[0] for file in verified_referenced_files],
             "file_paths": [file[1] for file in verified_referenced_files],
-            "frame_sets": [file[2] for file in verified_referenced_files],
         }
