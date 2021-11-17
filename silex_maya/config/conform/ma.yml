@@ -42,6 +42,8 @@ ma:
           path: "silex_client.commands.build_output_path.BuildOutputPath"
           tooltip: "Build the complete output path"
           parameters:
+            use_current_context: false
+            create_temp_dir: false
             frame_set:
               value: 0
               hide: true

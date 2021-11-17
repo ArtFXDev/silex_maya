@@ -29,7 +29,7 @@ class Save(CommandBase):
     ):
         def save(file_path: str):
             cmds.file(rename=file_path)
-            cmds.file(save=True, force=True)
+            cmds.file(save=True, force=True, type="mayaAscii")
 
         file_path = parameters["file_path"]
         if os.path.splitext(file_path)[1] != ".ma":

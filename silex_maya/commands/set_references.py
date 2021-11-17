@@ -42,16 +42,12 @@ class SetReferences(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         attributes: List[str] = parameters["attributes"]
-        indexes: List[str] = parameters["indexes"]
+        indexes: List[int] = parameters["indexes"]
 
         values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
         for value in parameters["values"]:
-            print("AAAAAAAAAAAAAAA")
-            print(value)
-            print(value.get_value(action_query))
             value = value.get_value(action_query)[0]
-            print(value.get_value(action_query))
             value = value.get_value(action_query)
             values.append(value)
 
@@ -72,7 +68,9 @@ class SetReferences(CommandBase):
         # Execute the function in the main thread
         new_values = []
         for attribute, index, value in zip(attributes, indexes, values):
-            value = value[index]
+            if isinstance(value, list):
+                value = value[index]
+
             new_value = await Utils.wrapped_execute(
                 action_query, set_reference, attribute, value
             )
