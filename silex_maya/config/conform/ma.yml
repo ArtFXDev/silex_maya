@@ -63,7 +63,7 @@ ma:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
           parameters:
-            file_path: !command-output "conform_scene:build_output_path:full_paths"
+            file_path: !command-output "conform_scene:build_output_path:full_path"
         open:
           label: "Open back the original scene"
           path: "silex_maya.commands.open.Open"
