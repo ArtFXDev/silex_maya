@@ -32,7 +32,7 @@ class ExportFBX(CommandBase):
             "type": pathlib.Path,
             "value": None,
         },
-        "root_name": {"label": "Out Object Name", "type": str, "value": "", "hide": False }
+        "root_name": {"label": "Out Object Name", "type": str, "value": ""}
     }
     
     async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
@@ -77,20 +77,20 @@ class ExportFBX(CommandBase):
         root_name = parameters.get("root_name")
         
         # authorized type
-        authorized_type = ["transform", "mesh", "camera"]        
+        authorized_types = ["transform", "mesh", "camera"]        
 
         # get selected object
         selected = await Utils.wrapped_execute(action_query, lambda: selected_objects())
         selected = await selected # because first 'selected' is futur
         
         # exclude unauthorized type       
-        selected = [item for item in selected if cmds.objectType(item.split("|")[-1]) in authorized_type]
+        selected = [item for item in selected if cmds.objectType(item.split("|")[-1]) in authorized_types]
 
         while len(selected) == 0:
             await self._prompt_label_parameter(action_query)
             selected = await Utils.wrapped_execute(action_query, lambda: selected_objects())
             selected = await selected # because first 'selected' is futur
-            selected = [item for item in selected if cmds.objectType(item.split("|")[-1]) in authorized_type]
+            selected = [item for item in selected if cmds.objectType(item.split("|")[-1]) in authorized_types]
         
         # Export the selection in OBJ
         os.makedirs(directory, exist_ok=True)
