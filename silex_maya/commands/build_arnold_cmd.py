@@ -83,7 +83,6 @@ class ArnoldCommand(CommandBase):
         directory: str = parameters.get("file_dir")
         exoprt_name: str = parameters.get("exoprt_name")
         # extension:  str = parameters.get("extension")
-        # ajouter la résolution !!!!!!!!!
         scene: str = cmds.file(query=True, sceneName=True)
         # scene: pathlib.Path = parameters.get('scene_path')
         # frame_range: fileseq.FrameSet = parameters.get("frame_range")
@@ -91,8 +90,6 @@ class ArnoldCommand(CommandBase):
         reslution: List[int] = parameters.get("reslution")
         task_size: int = parameters.get("task_size")
         skip_existing: int =  int(parameters.get("skip_existing"))
-
-        logger.info(frame_range)
 
         cmds.setAttr("defaultRenderGlobals.outFormatControl", 0)
         cmds.setAttr("defaultRenderGlobals.animation", 1)
