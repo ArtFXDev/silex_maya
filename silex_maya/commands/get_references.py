@@ -3,11 +3,11 @@ from __future__ import annotations
 import fileseq
 import pathlib
 import typing
+import logging
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.log import logger
 from silex_maya.utils.utils import Utils
 
 # Forward references
@@ -41,7 +41,7 @@ class GetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
         # Define the function to get all the referenced files in the scene
         def get_referenced_files():

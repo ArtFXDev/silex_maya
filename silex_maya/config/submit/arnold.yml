@@ -37,9 +37,9 @@ arnold:
           label: "arnold Job parameters"
           ask_user: true
           parameters:
-            file_dir: !command-output "build_output_path:build_output_path:directory"
+            export_dir: !command-output "build_output_path:build_output_path:directory"
             exoprt_name: !command-output "build_output_path:build_output_path:file_name"
-            frame_range: !command-output "build_output_path:build_output_path:frame_set"
+            # frame_range: !command-output "build_output_path:build_output_path:frame_set"
 
         submit_to_tractor:
           label: "Submit"

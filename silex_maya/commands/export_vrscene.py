@@ -13,6 +13,7 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
+import logging
 
 class ExportVrscene(CommandBase):
     """
@@ -38,7 +39,7 @@ class ExportVrscene(CommandBase):
 
     @ CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
 
         directory: str = str(parameters.get("file_dir"))

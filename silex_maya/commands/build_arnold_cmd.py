@@ -3,11 +3,11 @@ from __future__ import annotations
 import pathlib
 import typing
 import fileseq
+import logging
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta
-from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -29,7 +29,7 @@ class ArnoldCommand(CommandBase):
 
 
     parameters = {
-        "file_dir": {
+        "export_dir": {
             "label": "File directory",
             "type": str,
             "value": None,
@@ -81,10 +81,10 @@ class ArnoldCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
 
-        directory: str = parameters.get("file_dir")
+        directory: str = parameters.get("export_dir")
         exoprt_name: str = parameters.get("exoprt_name")
         # extension:  str = parameters.get("extension")
         scene: str = cmds.file(query=True, sceneName=True)
