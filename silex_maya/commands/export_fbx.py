@@ -15,6 +15,7 @@ import maya.cmds as cmds
 import os
 import pathlib
 import gazu
+import logging
 
 class ExportFBX(CommandBase):
     """
@@ -57,7 +58,7 @@ class ExportFBX(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
         # get selected objects
         def selected_objects():

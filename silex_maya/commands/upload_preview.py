@@ -5,6 +5,7 @@ import typing
 from typing import Any, Dict, List
 
 import gazu.task
+import logging
 
 from silex_client.action.command_base import CommandBase, CommandParameters
 from silex_client.utils.log import logger
@@ -34,7 +35,7 @@ class UploadPreview(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
         if not os.path.isfile(parameters["preview_path"]):
             logger.error(

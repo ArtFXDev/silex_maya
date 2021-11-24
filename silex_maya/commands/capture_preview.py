@@ -1,6 +1,7 @@
 from __future__ import annotations
 import typing
 from typing import Any, Dict
+import logging
 
 from silex_client.action.command_base import CommandBase
 from silex_maya.utils.utils import Utils
@@ -18,7 +19,7 @@ class CapturePreview(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
         # Take a thumbnail of the current viewport
         thumbnail_future = await Utils.wrapped_execute(action_query, create_thumbnail)

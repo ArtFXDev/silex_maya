@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import typing
+import logging 
 from typing import Any, Dict
 
 from maya import cmds
@@ -20,7 +21,7 @@ class CreateCube(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
         # Create the selected node
         cube_future = await Utils.wrapped_execute(action_query, cmds.polyCube)

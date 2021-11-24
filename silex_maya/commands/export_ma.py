@@ -14,6 +14,7 @@ from silex_maya.utils.utils import Utils
 import maya.cmds as cmds
 import os
 import pathlib
+import logging
 
 class ExportMa(CommandBase):
     """
@@ -39,7 +40,7 @@ class ExportMa(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
 
         def export_ma(path: str) -> None:

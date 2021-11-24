@@ -1,0 +1,50 @@
+arnold:
+  label: "Submit maya scene to arnold"
+  steps:
+    build_output_path:
+      index: 10
+      commands:
+        select_list:
+          label: "Enter extension"
+          path: "silex_client.commands.select_list.SelectList"
+          parameters:
+            parameters_list:
+              - "exr"
+              - "png"
+              - "jpg"
+              - "tiff"
+            param_name: "Render type"
+
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          tooltip: "Build the complete output path"
+          ask_user: true
+          parameters:
+            output_type: !command-output "build_output_path:select_list"
+            task:
+              hide: true
+            use_current_context:
+              value: true
+              hide: true
+
+    send_arnold_render:
+      label: "Setup render parameters"
+      index: 20
+      commands:
+        build_arnold_cmd:
+          path: "silex_maya.commands.build_arnold_cmd.ArnoldCommand"
+          label: "arnold Job parameters"
+          ask_user: true
+          parameters:
+            export_dir: !command-output "build_output_path:build_output_path:directory"
+            exoprt_name: !command-output "build_output_path:build_output_path:file_name"
+            # frame_range: !command-output "build_output_path:build_output_path:frame_set"
+
+        submit_to_tractor:
+          label: "Submit"
+          path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
+          ask_user: true
+          parameters:
+            cmd_list: !command-output "send_arnold_render:build_arnold_cmd:commands"
+            job_title: !command-output "build_arnold_cmd:build_arnold_cmd:file_name"

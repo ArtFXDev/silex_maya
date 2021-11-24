@@ -4,7 +4,6 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.log import logger
 from silex_maya.utils.utils import Utils
 from silex_client.action.parameter_buffer import ParameterBuffer
 
@@ -17,6 +16,7 @@ import maya.cmds as cmds
 import os
 import pathlib
 import gazu
+import logging
 
 class ExportOBJ(CommandBase):
     """
@@ -59,7 +59,7 @@ class ExportOBJ(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
     ):
         # get selected objects
         def selected_objects():
