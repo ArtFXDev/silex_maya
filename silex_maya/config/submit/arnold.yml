@@ -5,7 +5,7 @@ arnold:
       index: 10
       commands:
         select_list:
-          label: "Enter render type"
+          label: "Enter extension"
           path: "silex_client.commands.select_list.SelectList"
           parameters:
             parameters_list:
@@ -28,7 +28,7 @@ arnold:
               value: true
               hide: true
 
-    build_arnold_cmd:
+    send_arnold_render:
       label: "Setup render parameters"
       index: 20
       commands:
@@ -46,5 +46,5 @@ arnold:
           path: "silex_client.commands.submit_to_tractor.TractorSubmiter"
           ask_user: true
           parameters:
-            cmd_list: !command-output "build_arnold_cmd:build_arnold_cmd:commands"
+            cmd_list: !command-output "send_arnold_render:build_arnold_cmd:commands"
             job_title: !command-output "build_arnold_cmd:build_arnold_cmd:file_name"

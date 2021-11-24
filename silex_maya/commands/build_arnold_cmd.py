@@ -26,7 +26,6 @@ class ArnoldCommand(CommandBase):
     
     res_x: int = cmds.getAttr('defaultResolution.width')
     res_y: int = cmds.getAttr('defaultResolution.height')
-    # scene_path:  pathlib.Path = cmds.file(query=True, sceneName=True)
 
 
     parameters = {
@@ -109,7 +108,6 @@ class ArnoldCommand(CommandBase):
         ##############
         directory = directory.replace("D:", r"\\marvin\TEMP_5RN" )
         ##############
-
 
         for chunk in chunks:
             start, end = chunk[0], chunk[-1]
