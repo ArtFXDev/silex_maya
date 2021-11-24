@@ -49,9 +49,14 @@ class ArnoldCommand(CommandBase):
         #     "type": pathlib.Path
         #     "value": scene_path
         # },
+        # "frame_range": {
+        #     "label": "Frame range",
+        #     "type": fileseq.FrameSet,
+        # },
         "frame_range": {
             "label": "Frame range",
-            "type": fileseq.FrameSet,
+            "type":  IntArrayParameterMeta(2),
+            "value": [0, 10]
         },
         "reslution": {
             "label": "Resolution ( x, y )",
@@ -86,7 +91,7 @@ class ArnoldCommand(CommandBase):
         scene: str = cmds.file(query=True, sceneName=True)
         # scene: pathlib.Path = parameters.get('scene_path')
         # frame_range: fileseq.FrameSet = parameters.get("frame_range")
-        frame_range: List[int] = [0,10]
+        frame_range: List[int] = parameters.get("frame_range")
         reslution: List[int] = parameters.get("reslution")
         task_size: int = parameters.get("task_size")
         skip_existing: int =  int(parameters.get("skip_existing"))
