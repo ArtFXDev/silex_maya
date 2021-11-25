@@ -7,6 +7,7 @@ import logging
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
+from silex_maya.utils.utils import Utils
 from silex_client.utils.parameter_types import IntArrayParameterMeta
 
 # Forward references
@@ -53,7 +54,7 @@ class ArnoldCommand(CommandBase):
         #     "type": fileseq.FrameSet,
         # },
         "frame_range": {
-            "label": "Frame range",
+            "label": "Frame range (start, end, padding)",
             "type":  IntArrayParameterMeta(2),
             "value": [0, 10]
         },
@@ -74,7 +75,7 @@ class ArnoldCommand(CommandBase):
         }
     }
 
-    def _chunks(self, lst, n):
+    def _chunks(self, lst: List[Any], n: int) -> List[Any]:
         """Yield successive n-sized chunks from lst."""
         for i in range(0, len(lst), n):
             yield lst[i:i + n]
@@ -87,7 +88,7 @@ class ArnoldCommand(CommandBase):
         directory: str = parameters.get("export_dir")
         exoprt_name: str = parameters.get("exoprt_name")
         # extension:  str = parameters.get("extension")
-        scene: str = cmds.file(query=True, sceneName=True)
+        scene: str = await Utils.wrapped_execute(action_query, cmds.file, query=True, sceneName=True)
         # scene: pathlib.Path = parameters.get('scene_path')
         # frame_range: fileseq.FrameSet = parameters.get("frame_range")
         frame_range: List[int] = parameters.get("frame_range")
@@ -95,26 +96,38 @@ class ArnoldCommand(CommandBase):
         task_size: int = parameters.get("task_size")
         skip_existing: int =  int(parameters.get("skip_existing"))
 
+        # Set maya render settings
         cmds.setAttr("defaultRenderGlobals.outFormatControl", 0)
         cmds.setAttr("defaultRenderGlobals.animation", 1)
         cmds.setAttr("defaultRenderGlobals.putFrameBeforeExt", 1)
         cmds.setAttr("defaultRenderGlobals.extensionPadding", 4)
 
-        chunks = list(self._chunks(
+        chunks: List[Any] = list(self._chunks(
             range(frame_range[0], frame_range[1] + 1), task_size))
-        cmd_dict = dict()
+        cmd_dict: Dict[str, str] = dict()
 
         ### TEMP ###
         ##############
         directory = directory.replace("D:", r"\\marvin\TEMP_5RN" )
         ##############
 
-        for chunk in chunks:
-            start, end = chunk[0], chunk[-1]
-            logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd_dict[f"frames : {start} - {end}"] = f"rez env silex_maya -- Render -r arnold -rd {directory} -im {exoprt_name} -x {reslution[0]} -y {reslution[1]} -s {start} -e {end} {scene}"
+        arg_list: List[str] = [
+            f"-rd {directory}",
+            f"-im {exoprt_name}",
+            f"-x {reslution[0]}",
+            f"-y {reslution[1]}",
+            scene.result()
+        ]
 
-        logger.info("exprot to " + directory)
+        # create Commands
+        for chunk in chunks:
+            start: int = chunk[0] 
+            end: int = chunk[-1]
+            logger.info(f"Creating a new task with frames: {start} {end}")
+            cmd: str = "rez env silex_maya -- Render -r arnold {0} {1} {2} {3} -s {5} -e {6} {4}".format(*(arg_list + [start, end]))
+            cmd_dict[f"frames : {start} - {end}"] = cmd 
+
+        logger.info(f"exprot to {directory}")
 
         return {
             "commands": cmd_dict,
