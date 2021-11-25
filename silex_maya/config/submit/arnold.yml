@@ -22,6 +22,10 @@ arnold:
           ask_user: true
           parameters:
             output_type: !command-output "build_output_path:select_list"
+            ##### Temporary ######
+            frame_set:
+              hide: true
+            #################
             task:
               hide: true
             use_current_context:
