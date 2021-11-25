@@ -89,7 +89,6 @@ class ArnoldCommand(CommandBase):
         exoprt_name: str = parameters.get("exoprt_name")
         # extension:  str = parameters.get("extension")
         scene: str = await Utils.wrapped_execute(action_query, cmds.file, query=True, sceneName=True)
-        logger.info(scene)
         # scene: pathlib.Path = parameters.get('scene_path')
         # frame_range: fileseq.FrameSet = parameters.get("frame_range")
         frame_range: List[int] = parameters.get("frame_range")
