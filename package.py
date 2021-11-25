@@ -11,8 +11,6 @@ description = """
 
 vcs = "git"
 
-requires = ["silex_client", "maya", "python-3.7"]
-
 build_command = "python {root}/script/build.py {install}"
 
 
@@ -23,3 +21,13 @@ def commands():
     env.SILEX_ACTION_CONFIG.prepend("{root}/silex_maya/config")
     env.PYTHONPATH.append("{root}")
     env.PYTHONPATH.append("{root}/startup")
+
+
+@late()
+def requires():
+    major = str(this.version.major)
+    silex_requirement = ["silex_client"]
+    if major in ["dev", "beta", "prod"]:
+        silex_requirement = [f"silex_client-{major}"]
+
+    return ["maya", "python-3.7"] + silex_requirement
