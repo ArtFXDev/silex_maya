@@ -4,6 +4,7 @@ import fileseq
 import pathlib
 import typing
 import logging
+import re
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
@@ -21,6 +22,15 @@ class GetReferences(CommandBase):
     """
     Find all the referenced files, including textures, scene references...
     """
+
+    parameters = {
+        "skip_conformed": {
+            "label": "Skip conformed references",
+            "type": bool,
+            "value": True,
+            "tooltip": "The references that point to a file that is already in the right folder will be skipped"
+        }
+    }
 
     async def _prompt_new_path(self, action_query: ActionQuery) -> pathlib.Path:
         """
@@ -91,6 +101,11 @@ class GetReferences(CommandBase):
                     "Could not reach the file %s at %s", file_path, attribute
                 )
                 file_path = await self._prompt_new_path(action_query)
+
+            # Skip the references that are already conformed
+            if parameters["skip_conformed"]:
+                if re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent)) is not None:
+                    continue
 
             index = -1
 
