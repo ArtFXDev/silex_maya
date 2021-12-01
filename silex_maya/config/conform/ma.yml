@@ -17,6 +17,9 @@ ma:
           parameters:
             file_path: !command-output "input:input:file_paths"
             save: True
+        cleanup:
+          label: "Cleanup scene"
+          path: "silex_maya.commands.cleanup_scene.CleanupScene"
         get_references:
           label: "Get referenced files"
           path: "silex_maya.commands.get_references.GetReferences"

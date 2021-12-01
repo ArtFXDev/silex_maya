@@ -15,7 +15,7 @@ from silex_maya.utils.utils import Utils
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import maya.cmds as cmds
+from maya import cmds
 
 
 class GetReferences(CommandBase):
