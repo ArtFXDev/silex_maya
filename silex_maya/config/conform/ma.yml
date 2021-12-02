@@ -25,10 +25,10 @@ ma:
           path: "silex_maya.commands.get_references.GetReferences"
         conform_references:
           label: "Conform references found"
-          path: "silex_client.commands.iterate_action.IterateAction"
+          path: "silex_client.commands.utils.iterate_action.IterateAction"
           parameters:
             values: !command-output "conform_references:get_references:file_paths"
-            actions: 
+            actions:
               - "conform"
             categories:
               - "action"
