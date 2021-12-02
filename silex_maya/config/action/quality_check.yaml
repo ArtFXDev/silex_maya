@@ -15,7 +15,7 @@ quality_check:
 
         conform_references:
           label: "Conform references found"
-          path: "silex_client.commands.iterate_action.IterateAction"
+          path: "silex_client.commands.utils.iterate_action.IterateAction"
           parameters:
             values: !command-output "quality_check:get_references:file_paths"
             actions:
