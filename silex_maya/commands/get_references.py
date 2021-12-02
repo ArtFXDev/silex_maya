@@ -4,6 +4,7 @@ import fileseq
 import pathlib
 import typing
 import logging
+import re
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
@@ -14,7 +15,7 @@ from silex_maya.utils.utils import Utils
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import maya.cmds as cmds
+from maya import cmds
 
 
 class GetReferences(CommandBase):
@@ -22,22 +23,40 @@ class GetReferences(CommandBase):
     Find all the referenced files, including textures, scene references...
     """
 
-    async def _prompt_new_path(self, action_query: ActionQuery) -> pathlib.Path:
+    parameters = {
+        "skip_conformed": {
+            "label": "Skip conformed references",
+            "type": bool,
+            "value": True,
+            "tooltip": "The references that point to a file that is already in the right folder will be skipped"
+        }
+    }
+
+    async def _prompt_new_path(self, action_query: ActionQuery) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
         # Create a new parameter to prompt for the new file path
-        new_parameter = ParameterBuffer(
+        path_parameter = ParameterBuffer(
             type=pathlib.Path,
             name="new_path",
             label=f"New path",
         )
-        # Prompt the user to get the new path
-        file_path = await self.prompt_user(
-            action_query,
-            {"new_path": new_parameter},
+        skip_parameter = ParameterBuffer(
+            type=bool,
+            name="skip",
+            value=False,
+            label=f"Skip this reference",
         )
-        return pathlib.Path(file_path["new_path"])
+        # Prompt the user to get the new path
+        response = await self.prompt_user(
+            action_query,
+            {"new_path": path_parameter,
+            "skip": skip_parameter},
+        )
+        if response["new_path"] is not None:
+            response["new_path"] = pathlib.Path(response["new_path"])
+        return response["new_path"], response["skip"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -86,11 +105,23 @@ class GetReferences(CommandBase):
         # Check if the referenced files are reachable and prompt the user if not
         for attribute, file_path in await referenced_files:
             # Make sure the file path leads to a reachable file
+            skip = False
             while not file_path.exists() or not file_path.is_absolute():
                 logger.warning(
                     "Could not reach the file %s at %s", file_path, attribute
                 )
-                file_path = await self._prompt_new_path(action_query)
+                file_path, skip = await self._prompt_new_path(action_query)
+                if skip or file_path is None:
+                    break
+            # The user can decide to skip the references that are not reachable
+            if skip or file_path is None:
+                logger.info("Skipping the reference at %s", attribute)
+                continue
+
+            # Skip the references that are already conformed
+            if parameters["skip_conformed"]:
+                if re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent)) is not None:
+                    continue
 
             index = -1
 
