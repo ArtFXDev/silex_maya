@@ -53,6 +53,7 @@ ma:
             output_type:
               value: "ma"
               hide: true
+            name: !command-output "input:input:file_paths"
           ask_user: true
         repath_attributes:
           label: "Repath attributes"
