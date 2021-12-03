@@ -1,5 +1,4 @@
 from silex_client.core.context import Context
-from silex_client.resolve.config import Config
 import maya
 import create_shelf, custom_save
 

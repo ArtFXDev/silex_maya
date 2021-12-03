@@ -1,4 +1,5 @@
 import maya.cmds as cmds
+from silex_client.resolve.config import Config
 
 def create_shelf():
     shelf_id = "silex_shelf"
