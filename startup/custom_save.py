@@ -3,8 +3,6 @@ import maya.mel as mel
 
 def custom_save():
     # no install if in batch mode
-    if cmds.about(batch=True):
-        return
     cmd='python("from silex_client.action.action_query import ActionQuery;ActionQuery(\'save\').execute()")'
     # hijack save button
     cmds.iconTextButton(u"saveSceneButton", edit=True, command=cmd, sourceType="mel")
@@ -14,3 +12,6 @@ def custom_save():
     cmds.menuItem(u"saveItem", edit=True, label="Save Scene", command=cmd)
     # hijack CTRL-S named command
     cmds.nameCommand(u"NameComSave_File", annotation="Your Custom Save", command=cmd )
+
+
+
