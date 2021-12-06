@@ -150,6 +150,11 @@ class ExportAss(CommandBase):
         # Export the selection in OBJ
         os.makedirs(directory, exist_ok=True)
 
+        selection = await Utils.wrapped_execute(action_query, cmds.ls, sl=True)
+        selection = selection.result()
+        if selected and not len(selection):
+            raise Exception('No selection detected')
+
 
         await Utils.wrapped_execute(action_query, lambda: export_ass(export_path, cam, sel, Llinks, Slinks, Bbox, binary, mask))
 

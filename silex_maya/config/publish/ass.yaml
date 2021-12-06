@@ -5,8 +5,8 @@ vrscene:
       index: 50
       commands:
         export_vrscene:
-          label: "Export in vrscene"
-          path: "silex_maya.commands.export_vrscene.ExportVrscene"
+          label: "Export in ass"
+          path: "silex_maya.commands.export_ass.ExportAss"
           ask_user: true
           parameters:
             file_dir: !command-output "setup:build_output_path:temp_directory"
@@ -19,7 +19,7 @@ vrscene:
           label: "Move"
           path: "silex_client.commands.move.Move"
           parameters:
-            src: !command-output "export:export_vrscene"
+            src: !command-output "export:export_ass"
             dst: !command-output "setup:build_output_path:directory"
         remove:
           label: "Remove temp directory"
