@@ -124,7 +124,7 @@ class ArnoldCommand(CommandBase):
             start: int = chunk[0] 
             end: int = chunk[-1]
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd: str = "rez env silex_maya -- Render -r arnold {0} {1} {2} {3} -s {5} -e {6} {4}".format(*(arg_list + [start, end]))
+            cmd: str = r"C:\Maya2022\Maya2022\bin\render.exe -r arnold {0} {1} {2} {3} -s {5} -e {6} {4}".format(*(arg_list + [start, end]))
             cmd_dict[f"frames : {start} - {end}"] = cmd 
 
         logger.info(f"exprot to {directory}")
