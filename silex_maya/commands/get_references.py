@@ -5,10 +5,11 @@ import pathlib
 import typing
 import logging
 import re
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.parameter_types import TextParameterMeta
 from silex_maya.utils.utils import Utils
 
 # Forward references
@@ -32,11 +33,17 @@ class GetReferences(CommandBase):
         }
     }
 
-    async def _prompt_new_path(self, action_query: ActionQuery) -> Tuple[pathlib.Path, bool]:
+    async def _prompt_new_path(self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
         # Create a new parameter to prompt for the new file path
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta(color="warning"),
+            name="info",
+            label=f"Info",
+            value=f"The file {file_path} referenced at {parameter} could not be reached"
+        )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
             name="new_path",
@@ -51,8 +58,9 @@ class GetReferences(CommandBase):
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
-            {"new_path": path_parameter,
-            "skip": skip_parameter},
+            {"info": info_parameter,
+             "new_path": path_parameter,
+             "skip": skip_parameter},
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
@@ -110,7 +118,7 @@ class GetReferences(CommandBase):
                 logger.warning(
                     "Could not reach the file %s at %s", file_path, attribute
                 )
-                file_path, skip = await self._prompt_new_path(action_query)
+                file_path, skip = await self._prompt_new_path(action_query, file_path, attribute)
                 if skip or file_path is None:
                     break
             # The user can decide to skip the references that are not reachable
