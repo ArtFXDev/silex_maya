@@ -155,7 +155,6 @@ class ExportAss(CommandBase):
         if selected and not len(selection):
             raise Exception('No selection detected')
 
-
         await Utils.wrapped_execute(action_query, lambda: export_ass(export_path, cam, sel, Llinks, Slinks, Bbox, binary, mask))
 
         # Test if the export worked

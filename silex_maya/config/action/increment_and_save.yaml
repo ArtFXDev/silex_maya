@@ -1,0 +1,17 @@
+increment_and_save:
+  hide: true
+  steps:
+    increment_and_save:
+      label: "increment and save"
+
+      index: 50
+      commands:
+        build_work_path:
+          path: "silex_client.commands.build_work_path.BuildWorkPath"
+          parameters:
+            increment:
+              value: true
+        save_scene:
+          path: "silex_maya.commands.save.Save"
+          parameters:
+            file_path: !command-output "increment_and_save:build_work_path"

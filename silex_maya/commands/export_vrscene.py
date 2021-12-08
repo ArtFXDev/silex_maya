@@ -68,10 +68,6 @@ class ExportVrscene(CommandBase):
         await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
                                     pr=True, ea=not(selected), es=selected, typ="V-Ray Scene")
 
-        # Test if the export worked
-        import time
-        time.sleep(1)
-
         if not os.path.exists(export_path):
             raise Exception(
                 f"An error occured while exporting {export_path} to vrscene")
