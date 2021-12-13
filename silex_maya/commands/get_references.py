@@ -4,12 +4,12 @@ import fileseq
 import pathlib
 import typing
 import logging
-import re
 from typing import Any, Dict, Tuple, List, Union
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
+from silex_client.utils.files import is_valid_pipeline_path
 from silex_maya.utils.utils import Utils
 
 # Forward references
@@ -134,9 +134,8 @@ class GetReferences(CommandBase):
                 continue
 
             # Skip the references that are already conformed
-            if parameters["skip_conformed"]:
-                if re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent)) is not None:
-                    continue
+            if parameters["skip_conformed"] and is_valid_pipeline_path(file_path):
+                continue
 
             sequence = None
             # Look for a file sequence
