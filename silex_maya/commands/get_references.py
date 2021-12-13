@@ -85,6 +85,20 @@ class GetReferences(CommandBase):
             response["new_path"] = pathlib.Path(response["new_path"])
         return response["new_path"], response["skip"]
 
+    def _test_possible_sequence(self, attribute: str):
+        """
+        Define the function to test if an attribute might return a file sequence or not
+        """
+        # Test the parameters for a file node:
+        if cmds.nodeType(attribute) == "file":
+            node = ".".join(attribute.split(".")[:-1])
+            if cmds.getAttr(f"{node}.uvTilingMode") != 0:
+                return True
+            if cmds.getAttr(f"{node}.useFrameExtension") == 1:
+                return True
+
+        return False
+
     @CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
@@ -137,15 +151,24 @@ class GetReferences(CommandBase):
             if parameters["skip_conformed"] and is_valid_pipeline_path(file_path):
                 continue
 
+            # Skip the custom extensions provided
+            if "".join(file_path.suffixes) in parameters["filters"]:
+                continue
+
             sequence = None
-            # Look for a file sequence
-            for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-                # Find the file sequence that correspond the to file we are looking for
-                sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-                if file_path in sequence_list and len(sequence_list) > 1:
-                    sequence = file_sequence
-                    file_path = sequence_list
-                    break
+            # Test in the main thread if the current attribute might point to a sequence
+            is_possible_sequence = await Utils.wrapped_execute(
+                action_query, self._test_possible_sequence, attribute
+            )
+            if await is_possible_sequence:
+                # Look for a file sequence
+                for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+                    # Find the file sequence that correspond the to file we are looking for
+                    sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+                    if file_path in sequence_list and len(sequence_list) > 1:
+                        sequence = file_sequence
+                        file_path = sequence_list
+                        break
 
             # Append to the verified path
             references_found.append((attribute, file_path))
