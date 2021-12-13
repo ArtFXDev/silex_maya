@@ -9,7 +9,6 @@ from silex_client.utils.parameter_types import SelectParameterMeta
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.dialogs import Dialogs
 from silex_maya.utils.utils import Utils
 
 import maya.cmds as cmds
@@ -99,7 +98,7 @@ class ExportAss(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
         def export_ass(path: str, cam: str, sel: str, Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> None:
@@ -150,6 +149,10 @@ class ExportAss(CommandBase):
         # Export the selection in OBJ
         os.makedirs(directory, exist_ok=True)
 
+        selection = await Utils.wrapped_execute(action_query, cmds.ls, sl=True)
+        selection = selection.result()
+        if selected and not len(selection):
+            raise Exception('No selection detected')
 
         await Utils.wrapped_execute(action_query, lambda: export_ass(export_path, cam, sel, Llinks, Slinks, Bbox, binary, mask))
 

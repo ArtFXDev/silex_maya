@@ -1,28 +1,32 @@
 from __future__ import annotations
+
 import typing
-from typing import Any, Dict
 import logging
+from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_maya.utils.utils import Utils
-from silex_maya.utils.preview import create_thumbnail
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
+from maya import cmds, mel
 
-class CapturePreview(CommandBase):
+
+class CleanupScene(CommandBase):
     """
-    Capture the current viewport either as a playblast or a single frame
+    Find all the referenced files, including textures, scene references...
     """
 
     @CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
-        # Take a thumbnail of the current viewport
-        thumbnail_future = await Utils.wrapped_execute(action_query, create_thumbnail)
-        thumbnail = await thumbnail_future
+        def cleanup():
+            # This delete all the history
+            cmds.delete(cmds.ls(), constructionHistory = True)
+            # This remove all the unused stuff
+            mel.eval("cleanUpScene 3")
 
-        return thumbnail
+        await Utils.wrapped_execute(action_query, cleanup)

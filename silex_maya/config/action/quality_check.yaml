@@ -1,0 +1,28 @@
+quality_check:
+  label: "Quality check"
+  thumbnail: "quality_check.svg"
+  steps:
+    quality_check:
+      label: "Quality check ☑"
+      index: 50
+      commands:
+        check_ngones:
+          label: "N-gones checking..."
+          path: "silex_maya.commands.check.check_ngones.CheckNgones"
+
+        get_references:
+          label: "Check referenced paths"
+          path: "silex_maya.commands.get_references.GetReferences"
+
+        conform_references:
+          label: "Conform references found"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            values: !command-output "quality_check:get_references:file_paths"
+            actions:
+              - "conform"
+            categories:
+              - "action"
+            parameter: "setup:get_conform_output:file_paths"
+            label_key: "file_paths"
+            output: "setup:append_conform_actions"

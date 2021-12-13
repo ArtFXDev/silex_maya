@@ -1,5 +1,6 @@
 build:
   hide: true
+  thumbnail: "build.svg"
   steps:
     save:
       label: "Save"
