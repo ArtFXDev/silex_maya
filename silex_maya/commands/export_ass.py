@@ -9,7 +9,6 @@ from silex_client.utils.parameter_types import SelectParameterMeta
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.dialogs import Dialogs
 from silex_maya.utils.utils import Utils
 
 import maya.cmds as cmds
@@ -99,7 +98,7 @@ class ExportAss(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
         def export_ass(path: str, cam: str, sel: str, Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> None:

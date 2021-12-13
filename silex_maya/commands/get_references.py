@@ -4,12 +4,12 @@ import fileseq
 import pathlib
 import typing
 import logging
-import re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, List, Union
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import TextParameterMeta
+from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
+from silex_client.utils.files import is_valid_pipeline_path
 from silex_maya.utils.utils import Utils
 
 # Forward references
@@ -17,6 +17,14 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 from maya import cmds
+
+
+References = List[
+    Tuple[
+        List[str],
+        Union[List[pathlib.Path], pathlib.Path],
+    ]
+]
 
 
 class GetReferences(CommandBase):
@@ -30,19 +38,28 @@ class GetReferences(CommandBase):
             "type": bool,
             "value": True,
             "tooltip": "The references that point to a file that is already in the right folder will be skipped"
-        }
+        },
+        "filters": {
+            "label": "Custom filters",
+            "type": ListParameterMeta(str),
+            "value": [],
+            "tooltip": "List of file extensions to ignore",
+            "hide": True
+        },
     }
 
-    async def _prompt_new_path(self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any) -> Tuple[pathlib.Path, bool]:
+    async def _prompt_new_path(
+        self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
+    ) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
         # Create a new parameter to prompt for the new file path
         info_parameter = ParameterBuffer(
-            type=TextParameterMeta(color="warning"),
+            type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
-            value=f"The file {file_path} referenced at {parameter} could not be reached"
+            value=f"The file:\n{file_path}\n\nReferenced in:\n{parameter}\n\nCould not be reached",
         )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
@@ -58,9 +75,11 @@ class GetReferences(CommandBase):
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
-            {"info": info_parameter,
-             "new_path": path_parameter,
-             "skip": skip_parameter},
+            {
+                "info": info_parameter,
+                "skip": skip_parameter,
+                "new_path": path_parameter,
+            },
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
@@ -68,7 +87,7 @@ class GetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         # Define the function to get all the referenced files in the scene
         def get_referenced_files():
@@ -90,25 +109,13 @@ class GetReferences(CommandBase):
                 referenced_files.append((attribute, pathlib.Path(file_path)))
             return referenced_files
 
-        # Define the function to test if an attribute might return a file sequence or not
-        def test_possible_sequence(attribute):
-            # Test the parameters for a file node:
-            if cmds.nodeType(attribute) == "file":
-                node = ".".join(attribute.split(".")[:-1])
-                if cmds.getAttr(f"{node}.uvTilingMode") != 0:
-                    return True
-                if cmds.getAttr(f"{node}.useFrameExtension") == 1:
-                    return True
-
-            return False
-
         # Execute the get_referenced_files in the main thread
         referenced_files = await Utils.wrapped_execute(
             action_query, get_referenced_files
         )
 
         # Each referenced file must be verified
-        verified_referenced_files = []
+        references_found: References = []
 
         # Check if the referenced files are reachable and prompt the user if not
         for attribute, file_path in await referenced_files:
@@ -127,32 +134,62 @@ class GetReferences(CommandBase):
                 continue
 
             # Skip the references that are already conformed
-            if parameters["skip_conformed"]:
-                if re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent)) is not None:
-                    continue
+            if parameters["skip_conformed"] and is_valid_pipeline_path(file_path):
+                continue
 
-            index = -1
-
-            # Test in the main thread if the current attribute might point to a sequence
-            is_possible_sequence = await Utils.wrapped_execute(
-                action_query, test_possible_sequence, attribute
-            )
-            if await is_possible_sequence:
-                # Look for a file sequence
-                for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-                    # Find the file sequence that correspond the to file we are looking for
-                    sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-                    if file_path in sequence_list and len(sequence_list) > 1:
-                        index = sequence_list.index(file_path)
-                        file_path = sequence_list
-                        break
+            sequence = None
+            # Look for a file sequence
+            for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+                # Find the file sequence that correspond the to file we are looking for
+                sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+                if file_path in sequence_list and len(sequence_list) > 1:
+                    sequence = file_sequence
+                    file_path = sequence_list
+                    break
 
             # Append to the verified path
-            verified_referenced_files.append((attribute, file_path, index))
-            logger.info("Referenced file %s found at %s", file_path, attribute)
+            references_found.append((attribute, file_path))
+            if sequence is None:
+                logger.info("Referenced file(s) %s found at %s", file_path, attribute)
+            else:
+                logger.info("Referenced file(s) %s found at %s", sequence, attribute)
+
+        # Display a message to the user to inform about all the references to conform
+        current_scene = await Utils.wrapped_execute(action_query, cmds.file, q=True, sn=True)
+        referenced_file_paths = [
+            fileseq.findSequencesInList(reference[1])
+            if isinstance(reference[1], list)
+            else [reference[1]]
+            for reference in references_found
+        ]
+        message = f"The scene\n{await current_scene}\nis referencing non conformed file(s) :\n\n"
+        for file_path in referenced_file_paths:
+            message += f"- {' '.join([str(f) for f in file_path])}\n"
+
+        message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta("info"),
+            name="info",
+            label="Info",
+            value=message,
+        )
+        # Send the message to the user
+        if referenced_file_paths:
+            await self.prompt_user(action_query, {"info": info_parameter})
 
         return {
-            "attributes": [ref[0] for ref in verified_referenced_files],
-            "file_paths": [ref[1] for ref in verified_referenced_files],
-            "indexes": [ref[2] for ref in verified_referenced_files],
+            "attributes": [ref[0] for ref in references_found],
+            "file_paths": [ref[1] for ref in references_found],
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        new_path_parameter = self.command_buffer.parameters.get("new_path")
+        skip_parameter = self.command_buffer.parameters.get("skip")
+        if new_path_parameter is not None and skip_parameter is not None:
+            if not skip_parameter.hide:
+                new_path_parameter.hide = parameters.get("skip", True)
