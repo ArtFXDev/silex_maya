@@ -190,5 +190,7 @@ class GetReferences(CommandBase):
         logger: logging.Logger,
     ):
         new_path_parameter = self.command_buffer.parameters.get("new_path")
-        if new_path_parameter is not None:
-            new_path_parameter.hide = parameters.get("skip", True)
+        skip_parameter = self.command_buffer.parameters.get("skip")
+        if new_path_parameter is not None and skip_parameter is not None:
+            if not skip_parameter.hide:
+                new_path_parameter.hide = parameters.get("skip", True)
