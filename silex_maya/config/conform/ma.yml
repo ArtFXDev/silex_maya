@@ -28,7 +28,7 @@ ma:
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             values: !command-output "conform_references:get_references:file_paths"
-            actions: 
+            actions:
               - "conform"
             categories:
               - "action"
@@ -53,6 +53,7 @@ ma:
             output_type:
               value: "ma"
               hide: true
+            name: !command-output "input:input:file_paths"
           ask_user: true
         repath_attributes:
           label: "Repath attributes"
@@ -61,7 +62,6 @@ ma:
           parameters:
             attributes: !command-output "conform_references:get_references:attributes"
             values: !command-output "conform_references:conform_references"
-            indexes: !command-output "conform_references:get_references:indexes"
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"

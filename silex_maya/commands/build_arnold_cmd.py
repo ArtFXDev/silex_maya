@@ -82,7 +82,7 @@ class ArnoldCommand(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
         directory: str = parameters.get("export_dir")
@@ -96,38 +96,41 @@ class ArnoldCommand(CommandBase):
         task_size: int = parameters.get("task_size")
         skip_existing: int =  int(parameters.get("skip_existing"))
 
+    
+        arg_list: List[str] = [
+            f"-x {reslution[0]}",
+            f"-y {reslution[1]}",
+            scene.result()
+        ]
+
         # Set maya render settings
-        cmds.setAttr("defaultRenderGlobals.outFormatControl", 0)
-        cmds.setAttr("defaultRenderGlobals.animation", 1)
-        cmds.setAttr("defaultRenderGlobals.putFrameBeforeExt", 1)
-        cmds.setAttr("defaultRenderGlobals.extensionPadding", 4)
+        if action_query.context_metadata.get("user_email") is not None: 
+            cmds.setAttr("defaultRenderGlobals.outFormatControl", 0)
+            cmds.setAttr("defaultRenderGlobals.animation", 1)
+            cmds.setAttr("defaultRenderGlobals.putFrameBeforeExt", 1)
+            cmds.setAttr("defaultRenderGlobals.extensionPadding", 4)
+        else:
+            loggre.info('ELSE')
+            tmp_list: List[str] = [
+                f"-rd {directory}",
+                f"-im {exoprt_name}",
+            ]
+            arg_list = tmp_list + arg_list
+            logoer.info(arg_list)
 
         chunks: List[Any] = list(self._chunks(
             range(frame_range[0], frame_range[1] + 1), task_size))
         cmd_dict: Dict[str, str] = dict()
 
-        ### TEMP ###
-        ##############
-        directory = directory.replace("D:", r"\\marvin\TEMP_5RN" )
-        ##############
-
-        arg_list: List[str] = [
-            f"-rd {directory}",
-            f"-im {exoprt_name}",
-            f"-x {reslution[0]}",
-            f"-y {reslution[1]}",
-            scene.result()
-        ]
 
         # create Commands
         for chunk in chunks:
             start: int = chunk[0] 
             end: int = chunk[-1]
             logger.info(f"Creating a new task with frames: {start} {end}")
-            cmd: str = "rez env silex_maya -- Render -r arnold {0} {1} {2} {3} -s {5} -e {6} {4}".format(*(arg_list + [start, end]))
+            # cmd: str = r"C:\Maya2022\Maya2022\bin\render.exe -r arnold {0} {1} {2} {3} {5} -e {6} {4}".format(*(arg_list + [start, end]))
+            cmd: str = f"C:\\Maya2022\\Maya2022\\bin\\render.exe -r arnold {' '.join(arg_list[:-1])} -s {start} -e {end} {arg_list[-1]}"
             cmd_dict[f"frames : {start} - {end}"] = cmd 
-
-        logger.info(f"exprot to {directory}")
 
         return {
             "commands": cmd_dict,

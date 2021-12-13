@@ -29,19 +29,13 @@ class SetReferences(CommandBase):
             "type": ListParameterMeta(AnyParameter),
             "value": None,
         },
-        "indexes": {
-            "label": "Indexes",
-            "type": ListParameterMeta(int),
-            "value": None,
-        },
     }
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         attributes: List[str] = parameters["attributes"]
-        indexes: List[int] = parameters["indexes"]
 
         values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
@@ -66,9 +60,9 @@ class SetReferences(CommandBase):
 
         # Execute the function in the main thread
         new_values = []
-        for attribute, index, value in zip(attributes, indexes, values):
+        for attribute, value in zip(attributes, values):
             if isinstance(value, list):
-                value = value[index]
+                value = value[-1]
 
             new_value = await Utils.wrapped_execute(
                 action_query, set_reference, attribute, value

@@ -39,11 +39,12 @@ class ExportVrscene(CommandBase):
 
     @ CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
-        directory: str = str(parameters.get("file_dir"))
-        file_name: str = str(parameters.get("file_name"))
+        directory: str = str(parameters["file_dir"])
+        file_name: str = str(parameters["file_name"])
+        selected: bool = True
         
         # Check for extension
         if "." in file_name:
@@ -54,13 +55,13 @@ class ExportVrscene(CommandBase):
         # Export the selection in OBJ
         os.makedirs(directory, exist_ok=True)
 
-
+        selection = await Utils.wrapped_execute(action_query, cmds.ls, sl=True)
+        selection = selection.result()
+        if not len(selection):
+            selected = False
+        
         await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
-                                    pr=True, ea=True, typ="V-Ray Scene")
-
-        # Test if the export worked
-        import time
-        time.sleep(1)
+                                    pr=True, ea=not(selected), es=selected, typ="V-Ray Scene")
 
         if not os.path.exists(export_path):
             raise Exception(

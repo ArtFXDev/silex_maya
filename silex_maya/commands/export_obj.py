@@ -59,7 +59,7 @@ class ExportOBJ(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         # get selected objects
         def selected_objects():

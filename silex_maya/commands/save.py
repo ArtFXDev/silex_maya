@@ -19,18 +19,19 @@ class Save(CommandBase):
     """
 
     parameters = {
-        "file_path": {"label": "filename", "type": str, "value": None, "hide": False}
+        "file_path": {"label": "filename", "type": str, "hide": False}
     }
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         def save(file_path: str):
             cmds.file(rename=file_path)
             cmds.file(save=True, force=True, type="mayaAscii")
 
         file_path = parameters["file_path"]
+        logger.info(file_path)
         if os.path.splitext(file_path)[1] != ".ma":
             file_path = f"{os.path.splitext(file_path)[0]}.ma"
 
