@@ -1,5 +1,6 @@
 save:
   hide: true
+  thumbnail: "save.svg"
   steps:
     save:
       label: "Save"

@@ -1,5 +1,6 @@
 quality_check:
   label: "Quality check"
+  thumbnail: "quality_check.svg"
   steps:
     quality_check:
       label: "Quality check ☑"

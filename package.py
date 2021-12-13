@@ -21,6 +21,7 @@ def commands():
     env.SILEX_ACTION_CONFIG.prepend("{root}/silex_maya/config")
     env.PYTHONPATH.append("{root}")
     env.PYTHONPATH.append("{root}/startup")
+    env.XBMLANGPATH.append("{root}/startup/icons")
 
 
 @late()

@@ -1,5 +1,7 @@
 import maya.cmds as cmds
 from silex_client.resolve.config import Config
+from silex_client.action.action_query import ActionQuery
+
 
 def create_shelf():
     shelf_id = "silex_shelf"
@@ -19,15 +21,17 @@ def create_shelf():
         for item in Config().actions
     }
 
-    for action in actions:
+    for action_name, action_script in actions.items():
+        action = ActionQuery(action_name)
+
         cmds.setParent(shelf_id)
         cmds.shelfButton(
             width=37,
             height=37,
-            image="commandButton.png",
-            l=action,
-            imageOverlayLabel=action,
-            command=actions[action],
+            image=action.buffer.thumbnail,
+            l=action_name,
+            imageOverlayLabel=action.buffer.label,
+            command=action_script,
             olb=(0, 0, 0, 0),
             olc=(0.9, 0.9, 0.9),
         )
