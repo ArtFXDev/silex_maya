@@ -35,11 +35,6 @@ class ExportVrscene(CommandBase):
             "type": pathlib.Path,
             "value": None,
         },
-        "selection": {
-            "label": "Export selection",
-            "type": bool,
-            "value": True,
-        },
     }
 
     @ CommandBase.conform_command()
@@ -49,7 +44,7 @@ class ExportVrscene(CommandBase):
 
         directory: str = str(parameters["file_dir"])
         file_name: str = str(parameters["file_name"])
-        selected: bool = parameters['selection'] 
+        selected: bool = True
         
         # Check for extension
         if "." in file_name:
@@ -62,8 +57,8 @@ class ExportVrscene(CommandBase):
 
         selection = await Utils.wrapped_execute(action_query, cmds.ls, sl=True)
         selection = selection.result()
-        if selected and not len(selection):
-            raise Exception('No selection detected')
+        if not len(selection):
+            selected = False
         
         await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
                                     pr=True, ea=not(selected), es=selected, typ="V-Ray Scene")
