@@ -5,11 +5,11 @@ import pathlib
 import typing
 import logging
 import re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, List, Union
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import TextParameterMeta
+from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
 from silex_maya.utils.utils import Utils
 
 # Forward references
@@ -17,6 +17,14 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 from maya import cmds
+
+
+References = List[
+    Tuple[
+        List[str],
+        Union[List[pathlib.Path], pathlib.Path],
+    ]
+]
 
 
 class GetReferences(CommandBase):
@@ -30,19 +38,28 @@ class GetReferences(CommandBase):
             "type": bool,
             "value": True,
             "tooltip": "The references that point to a file that is already in the right folder will be skipped"
-        }
+        },
+        "filters": {
+            "label": "Custom filters",
+            "type": ListParameterMeta(str),
+            "value": [],
+            "tooltip": "List of file extensions to ignore",
+            "hide": True
+        },
     }
 
-    async def _prompt_new_path(self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any) -> Tuple[pathlib.Path, bool]:
+    async def _prompt_new_path(
+        self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
+    ) -> Tuple[pathlib.Path, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
         # Create a new parameter to prompt for the new file path
         info_parameter = ParameterBuffer(
-            type=TextParameterMeta(color="warning"),
+            type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
-            value=f"The file {file_path} referenced at {parameter} could not be reached"
+            value=f"The file:\n{file_path}\n\nReferenced in\n{parameter}\n\nCould not be reached",
         )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
@@ -58,9 +75,11 @@ class GetReferences(CommandBase):
         # Prompt the user to get the new path
         response = await self.prompt_user(
             action_query,
-            {"info": info_parameter,
-             "new_path": path_parameter,
-             "skip": skip_parameter},
+            {
+                "info": info_parameter,
+                "skip": skip_parameter,
+                "new_path": path_parameter,
+            },
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
@@ -156,3 +175,13 @@ class GetReferences(CommandBase):
             "file_paths": [ref[1] for ref in verified_referenced_files],
             "indexes": [ref[2] for ref in verified_referenced_files],
         }
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        new_path_parameter = self.command_buffer.parameters.get("new_path")
+        if new_path_parameter is not None:
+            new_path_parameter.hide = parameters.get("skip", True)
