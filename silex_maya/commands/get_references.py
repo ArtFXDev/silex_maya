@@ -59,7 +59,7 @@ class GetReferences(CommandBase):
             type=TextParameterMeta("warning"),
             name="info",
             label=f"Info",
-            value=f"The file:\n{file_path}\n\nReferenced in\n{parameter}\n\nCould not be reached",
+            value=f"The file:\n{file_path}\n\nReferenced in:\n{parameter}\n\nCould not be reached",
         )
         path_parameter = ParameterBuffer(
             type=pathlib.Path,
@@ -87,7 +87,7 @@ class GetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         # Define the function to get all the referenced files in the scene
         def get_referenced_files():
@@ -109,25 +109,13 @@ class GetReferences(CommandBase):
                 referenced_files.append((attribute, pathlib.Path(file_path)))
             return referenced_files
 
-        # Define the function to test if an attribute might return a file sequence or not
-        def test_possible_sequence(attribute):
-            # Test the parameters for a file node:
-            if cmds.nodeType(attribute) == "file":
-                node = ".".join(attribute.split(".")[:-1])
-                if cmds.getAttr(f"{node}.uvTilingMode") != 0:
-                    return True
-                if cmds.getAttr(f"{node}.useFrameExtension") == 1:
-                    return True
-
-            return False
-
         # Execute the get_referenced_files in the main thread
         referenced_files = await Utils.wrapped_execute(
             action_query, get_referenced_files
         )
 
         # Each referenced file must be verified
-        verified_referenced_files = []
+        references_found: References = []
 
         # Check if the referenced files are reachable and prompt the user if not
         for attribute, file_path in await referenced_files:
@@ -150,30 +138,49 @@ class GetReferences(CommandBase):
                 if re.search(r"D:\\PIPELINE.+\\publish\\v", str(file_path.parent)) is not None:
                     continue
 
-            index = -1
-
-            # Test in the main thread if the current attribute might point to a sequence
-            is_possible_sequence = await Utils.wrapped_execute(
-                action_query, test_possible_sequence, attribute
-            )
-            if await is_possible_sequence:
-                # Look for a file sequence
-                for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-                    # Find the file sequence that correspond the to file we are looking for
-                    sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-                    if file_path in sequence_list and len(sequence_list) > 1:
-                        index = sequence_list.index(file_path)
-                        file_path = sequence_list
-                        break
+            sequence = None
+            # Look for a file sequence
+            for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
+                # Find the file sequence that correspond the to file we are looking for
+                sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
+                if file_path in sequence_list and len(sequence_list) > 1:
+                    sequence = file_sequence
+                    file_path = sequence_list
+                    break
 
             # Append to the verified path
-            verified_referenced_files.append((attribute, file_path, index))
-            logger.info("Referenced file %s found at %s", file_path, attribute)
+            references_found.append((attribute, file_path))
+            if sequence is None:
+                logger.info("Referenced file(s) %s found at %s", file_path, attribute)
+            else:
+                logger.info("Referenced file(s) %s found at %s", sequence, attribute)
+
+        # Display a message to the user to inform about all the references to conform
+        current_scene = await Utils.wrapped_execute(action_query, cmds.file, q=True, sn=True)
+        referenced_file_paths = [
+            fileseq.findSequencesInList(reference[1])
+            if isinstance(reference[1], list)
+            else [reference[1]]
+            for reference in references_found
+        ]
+        message = f"The scene\n{await current_scene}\nis referencing non conformed file(s) :\n\n"
+        for file_path in referenced_file_paths:
+            message += f"- {' '.join([str(f) for f in file_path])}\n"
+
+        message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta("info"),
+            name="info",
+            label="Info",
+            value=message,
+        )
+        # Send the message to the user
+        if referenced_file_paths:
+            await self.prompt_user(action_query, {"info": info_parameter})
 
         return {
-            "attributes": [ref[0] for ref in verified_referenced_files],
-            "file_paths": [ref[1] for ref in verified_referenced_files],
-            "indexes": [ref[2] for ref in verified_referenced_files],
+            "attributes": [ref[0] for ref in references_found],
+            "file_paths": [ref[1] for ref in references_found],
         }
 
     async def setup(

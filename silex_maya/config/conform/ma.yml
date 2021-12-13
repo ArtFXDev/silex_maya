@@ -62,7 +62,6 @@ ma:
           parameters:
             attributes: !command-output "conform_references:get_references:attributes"
             values: !command-output "conform_references:conform_references"
-            indexes: !command-output "conform_references:get_references:indexes"
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"

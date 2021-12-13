@@ -5,7 +5,6 @@ import logging
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta
-from silex_client.utils.log import logger
 
 
 # Forward references
@@ -46,7 +45,7 @@ class ExportABC(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         
         # get select objects
