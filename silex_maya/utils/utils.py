@@ -1,9 +1,10 @@
 import asyncio
-import maya.utils as utils
+from maya import utils, cmds
 from typing import Callable
 from silex_client.utils.log import logger
 from silex_client.core.context import Context
 from concurrent import futures
+import threading
 
 
 class Utils:
@@ -26,7 +27,11 @@ class Utils:
                 Context.get().event_loop.register_task(set_future_exception(ex))
 
         # This maya function execute the given function in the main thread
-        utils.executeDeferred(wrapped_function)
+        if not cmds.about(batch=True):
+            utils.executeDeferred(wrapped_function)
+        else:
+            thread = threading.Thread(target=wrapped_function, daemon=True)
+            thread.start()
 
         def callback(task_result: futures.Future):
             if task_result.cancelled():

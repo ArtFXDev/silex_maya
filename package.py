@@ -22,7 +22,6 @@ def commands():
     env.PYTHONPATH.append("{root}")
     env.PYTHONPATH.append("{root}/startup")
     env.XBMLANGPATH.append("{root}/startup/icons")
-    env.PYTHONSTARTUP = f"{root}/startup/mayapy_startup.py"
 
     parser_module = ".".join(["silex_maya", "cli", "parser"])
     alias("silex", f"mayapy -m {parser_module}")
