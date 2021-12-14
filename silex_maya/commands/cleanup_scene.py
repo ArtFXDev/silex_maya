@@ -25,7 +25,7 @@ class CleanupScene(CommandBase):
     ):
         def cleanup():
             # This delete all the history
-            cmds.delete(cmds.ls(), constructionHistory = True)
+            # cmds.delete(cmds.ls(), constructionHistory = True)
             # This remove all the unused stuff
             mel.eval("cleanUpScene 3")
 
