@@ -50,7 +50,7 @@ class GetReferences(CommandBase):
 
     async def _prompt_new_path(
         self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
-    ) -> Tuple[pathlib.Path, bool]:
+    ) -> Tuple[pathlib.Path, bool, bool]:
         """
         Helper to prompt the user for a new path and wait for its response
         """
@@ -66,6 +66,12 @@ class GetReferences(CommandBase):
             name="new_path",
             label=f"New path",
         )
+        skip_all_parameter = ParameterBuffer(
+            type=bool,
+            name="skip_all",
+            value=False,
+            label=f"Skip all unresolved reference",
+        )
         skip_parameter = ParameterBuffer(
             type=bool,
             name="skip",
@@ -77,13 +83,14 @@ class GetReferences(CommandBase):
             action_query,
             {
                 "info": info_parameter,
+                "skip_all": skip_all_parameter,
                 "skip": skip_parameter,
                 "new_path": path_parameter,
             },
         )
         if response["new_path"] is not None:
             response["new_path"] = pathlib.Path(response["new_path"])
-        return response["new_path"], response["skip"]
+        return response["new_path"], response["skip"], response["skip_all"]
 
     def _test_possible_sequence(self, attribute: str):
         """
@@ -132,15 +139,20 @@ class GetReferences(CommandBase):
         references_found: References = []
 
         # Check if the referenced files are reachable and prompt the user if not
+        skip_all = False
         for attribute, file_path in await referenced_files:
             # Make sure the file path leads to a reachable file
             skip = False
-            while not file_path.exists() or not file_path.is_absolute():
+            while (not file_path.exists() or not file_path.is_absolute()):
+                if skip_all:
+                    skip = True
+                    break
                 logger.warning(
                     "Could not reach the file %s at %s", file_path, attribute
                 )
-                file_path, skip = await self._prompt_new_path(action_query, file_path, attribute)
-                if skip or file_path is None:
+                file_path, skip, skip_all = await self._prompt_new_path(action_query, file_path, attribute)
+                if skip or file_path is None or skip_all:
+                    skip = True
                     break
             # The user can decide to skip the references that are not reachable
             if skip or file_path is None:
@@ -213,6 +225,10 @@ class GetReferences(CommandBase):
     ):
         new_path_parameter = self.command_buffer.parameters.get("new_path")
         skip_parameter = self.command_buffer.parameters.get("skip")
-        if new_path_parameter is not None and skip_parameter is not None:
+        skip_all_parameter = self.command_buffer.parameters.get("skip_all")
+        if new_path_parameter is not None and skip_parameter is not None and skip_all_parameter is not None:
+            if not skip_all_parameter.hide:
+                skip_parameter.hide = parameters.get("skip_all", True)
+                new_path_parameter.hide = parameters.get("skip_all", True)
             if not skip_parameter.hide:
                 new_path_parameter.hide = parameters.get("skip", True)
