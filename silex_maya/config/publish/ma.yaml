@@ -1,0 +1,27 @@
+ma:
+  steps:
+    export:
+      label: "Export"
+      index: 50
+      commands:
+        export_ma:
+          label: "Export in OBJ"
+          path: "silex_maya.commands.export_ma.ExportMa"
+          parameters:
+            directory: !command-output "setup:build_output_path:temp_directory"
+            file_name: !command-output "setup:build_output_path:file_name"
+    move:
+      label: "Move"
+      index: 60
+      commands:
+        move:
+          label: "Move"
+          path: "silex_client.commands.move.Move"
+          parameters:
+            src: !command-output "export:export_ma"
+            dst: !command-output "setup:build_output_path:directory"
+        remove:
+          label: "Remove temp directory"
+          path: "silex_client.commands.remove.Remove"
+          parameters:
+            file_path: !command-output "setup:build_output_path:temp_directory"
