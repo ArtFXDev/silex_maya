@@ -6,7 +6,7 @@ from typing import Any, Dict
 from silex_client.action.command_base import CommandBase
 from silex_maya.utils.utils import Utils
 from silex_client.action.parameter_buffer import ParameterBuffer
-
+from silex_client.utils.parameter_types import TextParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -37,25 +37,22 @@ class ExportOBJ(CommandBase):
         "root_name": {"label": "Out Object Name", "type": str, "value": "", "hide": False }
     }
 
-    async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
+    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
         # Create a new parameter to prompt label
 
-        label_parameter = ParameterBuffer(
-            type=str,
-            name="label_parameter",
-            label="Could not export the selection: Select only one mesh component."
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta(level),
+            name="Info",
+            label="Info",
+            value= f"Warning : {message}",
         )
-
         # Prompt the user with a label
-        label = await self.prompt_user(
-            action_query,
-            { "label": label_parameter }
-        )
+        prompt = await self.prompt_user(action_query, {"info": info_parameter})
 
-        return label["label"]
+        return prompt["info"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -86,7 +83,7 @@ class ExportOBJ(CommandBase):
         selected = [item for item in selected if cmds.objectType(item.split("|")[-1]) in authorized_types]
         
         while len(selected) != 1:
-            await self._prompt_label_parameter(action_query)
+            await self._prompt_info_parameter(action_query, "Could not export the selection: Select only one mesh component.")
             # get selected object
             selected = await Utils.wrapped_execute(action_query, lambda: selected_objects())
             selected = await selected # because first 'selected' is futur      

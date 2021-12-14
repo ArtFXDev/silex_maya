@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -33,28 +34,36 @@ class ExportFBX(CommandBase):
             "type": pathlib.Path,
             "value": None,
         },
-        "root_name": {"label": "Out Object Name", "type": str, "value": ""}
+        "root_name": {"label": "Out Object Name", "type": str, "value": "" },
+         "timeline_as_framerange": {
+            "label": "Take timeline as frame-range?",
+            "type": bool,
+            "value": False,
+            "hide": False,
+        },
+        "frame_range": {
+            "label": "Frame Range",
+            "type": IntArrayParameterMeta(2),
+            "value": [0, 0],
+        },
     }
-    
-    async def _prompt_label_parameter(self, action_query: ActionQuery) -> pathlib.Path:
+
+    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
         # Create a new parameter to prompt label
 
-        label_parameter = ParameterBuffer(
-            type=str,
-            name="label_parameter",
-            label="Could not export the selection: No selection detected"
+        info_parameter = ParameterBuffer(
+            type=TextParameterMeta(level),
+            name="Info",
+            label="Info",
+            value= f"Warning : {message}",
         )
-
         # Prompt the user with a label
-        label = await self.prompt_user(
-            action_query,
-            { "label": label_parameter }
-        )
+        prompt = await self.prompt_user(action_query, {"info": info_parameter})
 
-        return label["label"]
+        return prompt["info"]
 
     @CommandBase.conform_command()
     async def __call__(
@@ -66,17 +75,26 @@ class ExportFBX(CommandBase):
             selected = cmds.ls(sl=True,long=True) or []
             selected.sort(key=len, reverse=True) # reverse
             return selected
-
         # get select objects
-        def export_fbx(export_path, object_list):
+        def export_fbx(export_path, object_list, used_timeline, start_frame, end_frame):
+            if used_timeline:
+                start_frame = cmds.playbackOptions(q=True, animationStartTime=True)
+                end_frame = cmds.playbackOptions(q=True, animationEndTime=True)
+
             cmds.select(object_list)
-            cmds.file(export_path, es=True, pr=True, type="FBX export")
+            cmds.bakeSimulation(object_list) # Needed
+            cmds.FBXExportSplitAnimationIntoTakes("-clear")
+            cmds.FBXExportSplitAnimationIntoTakes("-v", "Maya_FBX_Export_Take", start_frame, end_frame)
+            cmds.FBXExport("-f", export_path, "-s")
 
         # Get the output path
         directory = parameters.get("file_dir")
         file_name = parameters.get("file_name")
         root_name = parameters.get("root_name")
-        
+        used_timeline = parameters.get("timeline_as_framerange")
+        start_frame = parameters.get("frame_range")[0]
+        end_frame = parameters.get("frame_range")[1]
+
         # authorized type
         authorized_types = ["transform", "mesh", "camera"]        
 
@@ -88,7 +106,7 @@ class ExportFBX(CommandBase):
         selected = [item for item in selected if cmds.objectType(item.split("|")[-1]) in authorized_types]
 
         while len(selected) == 0:
-            await self._prompt_label_parameter(action_query)
+            await self._prompt_info_parameter(action_query, "Could not export the selection: No selection detected")
             selected = await Utils.wrapped_execute(action_query, lambda: selected_objects())
             selected = await selected # because first 'selected' is futur
             selected = [item for item in selected if cmds.objectType(item.split("|")[-1]) in authorized_types]
@@ -102,6 +120,15 @@ class ExportFBX(CommandBase):
         export_path = export_path.with_suffix(f".{extension['short_name']}")
 
         # Export obj to fbx
-        await Utils.wrapped_execute(action_query, export_fbx, export_path, selected)
+        await Utils.wrapped_execute(action_query, export_fbx, export_path, selected, used_timeline, start_frame, end_frame)
 
         return str(export_path)
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
+        pass
