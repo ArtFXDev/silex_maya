@@ -34,9 +34,20 @@ class ExportFBX(CommandBase):
             "type": pathlib.Path,
             "value": None,
         },
-        "root_name": {"label": "Out Object Name", "type": str, "value": ""}
+        "root_name": {"label": "Out Object Name", "type": str, "value": "" },
+         "timeline_as_framerange": {
+            "label": "Take timeline as frame-range?",
+            "type": bool,
+            "value": False,
+            "hide": False,
+        },
+        "frame_range": {
+            "label": "Frame Range",
+            "type": IntArrayParameterMeta(2),
+            "value": [0, 0],
+        },
     }
-    
+
     async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
         """
         Helper to prompt the user a label
@@ -64,17 +75,26 @@ class ExportFBX(CommandBase):
             selected = cmds.ls(sl=True,long=True) or []
             selected.sort(key=len, reverse=True) # reverse
             return selected
-
         # get select objects
-        def export_fbx(export_path, object_list):
+        def export_fbx(export_path, object_list, used_timeline, start_frame, end_frame):
+            if used_timeline:
+                start_frame = cmds.playbackOptions(q=True, animationStartTime=True)
+                end_frame = cmds.playbackOptions(q=True, animationEndTime=True)
+
             cmds.select(object_list)
-            cmds.file(export_path, es=True, pr=True, type="FBX export")
+            cmds.bakeSimulation(object_list) # Needed
+            cmds.FBXExportSplitAnimationIntoTakes("-clear")
+            cmds.FBXExportSplitAnimationIntoTakes("-v", "Maya_FBX_Export_Take", start_frame, end_frame)
+            cmds.FBXExport("-f", export_path, "-s")
 
         # Get the output path
         directory = parameters.get("file_dir")
         file_name = parameters.get("file_name")
         root_name = parameters.get("root_name")
-        
+        used_timeline = parameters.get("timeline_as_framerange")
+        start_frame = parameters.get("frame_range")[0]
+        end_frame = parameters.get("frame_range")[1]
+
         # authorized type
         authorized_types = ["transform", "mesh", "camera"]        
 
@@ -100,6 +120,15 @@ class ExportFBX(CommandBase):
         export_path = export_path.with_suffix(f".{extension['short_name']}")
 
         # Export obj to fbx
-        await Utils.wrapped_execute(action_query, export_fbx, export_path, selected)
+        await Utils.wrapped_execute(action_query, export_fbx, export_path, selected, used_timeline, start_frame, end_frame)
 
         return str(export_path)
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
+        pass
