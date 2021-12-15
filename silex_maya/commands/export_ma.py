@@ -78,7 +78,6 @@ class ExportMa(CommandBase):
           
         export_path: str = f"{directory}{os.path.sep}{file_name}.ma"
 
-        logger.info('export')
 
         # Export the selection in ma
         future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
@@ -89,13 +88,12 @@ class ExportMa(CommandBase):
 
 
         while not export_valid:
-            logger.warning('while start')
             full_scene = await self._prompt_select_parameter(action_query)
             future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
             slection_list = await future
             if len(slection_list) or full_scene:
                 export_valid =  True
-            logger.warning(export_valid)
+
 
         os.makedirs(directory, exist_ok=True)
         await Utils.wrapped_execute(action_query,  cmds.file, export_path, ea=full_scene, exportSelected=not(full_scene), pr=True, typ="mayaAscii")
