@@ -78,7 +78,6 @@ class ExportMa(CommandBase):
           
         export_path: str = f"{directory}{os.path.sep}{file_name}.ma"
 
-
         # Export the selection in ma
         future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
         slection_list: List[str] = await future
