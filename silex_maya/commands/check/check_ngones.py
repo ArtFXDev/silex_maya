@@ -1,8 +1,6 @@
 from __future__ import annotations
-import asyncio
 import typing
-import logging 
-import pathlib 
+import logging
 from typing import Any, Dict
 
 from maya import cmds
@@ -22,30 +20,27 @@ class CheckNgones(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.logger,
     ):
-
         def check_ngons():
-            logger.info('check ngones')
-            # select all dag objects
-            cmds.select( ado=True )
+            logger.info("check ngones")
 
-            # filter selection to N-gones
-            cmds.polySelectConstraint( m=3, t=8, sz=3 )
-            
+            # Select all dag objects
+            cmds.select(ado=True)
+
+            # Filter selection to N-gones
+            cmds.polySelectConstraint(m=3, t=8, sz=3)
+
             sel_size: int = len(cmds.ls(sl=True))
 
             if sel_size:
-
-                ##################
-                # prompt warning param 
-                # f' WARNING : FOUND N-gones ( {sel_size} )'
-                ##################
-
                 # restore selection constraint
-                cmds.polySelectConstraint( m=3, t=8, sz=2 )
+                cmds.polySelectConstraint(m=3, t=8, sz=2)
                 cmds.select(clear=True)
 
-                raise Exception(f'{sel_size} N-gones found')
+                raise Exception(f"{sel_size} N-gones found")
 
         await Utils.wrapped_execute(action_query, lambda: check_ngons())

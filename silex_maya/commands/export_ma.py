@@ -85,6 +85,7 @@ class ExportMa(CommandBase):
         if len(slection_list):
             export_valid =  True
 
+
         while not export_valid:
             full_scene = await self._prompt_select_parameter(action_query)
             future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
@@ -92,8 +93,10 @@ class ExportMa(CommandBase):
             if len(slection_list) or full_scene:
                 export_valid =  True
 
+
         os.makedirs(directory, exist_ok=True)
-        cmds.file(export_path, ea=full_scene, exportSelected=not(full_scene), pr=True, typ="mayaAscii")
+        await Utils.wrapped_execute(action_query,  cmds.file, export_path, ea=full_scene, exportSelected=not(full_scene), pr=True, typ="mayaAscii")
+       
 
 
         if not os.path.exists(export_path):
