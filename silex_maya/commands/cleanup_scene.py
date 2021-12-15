@@ -25,8 +25,8 @@ class CleanupScene(CommandBase):
     ):
         def cleanup():
             # This delete all the history
-            # cmds.delete(cmds.ls(), constructionHistory = True)
+            cmds.delete(cmds.ls(), constructionHistory = True)
             # This remove all the unused stuff
             mel.eval("cleanUpScene 3")
 
-        await Utils.wrapped_execute(action_query, cleanup)
+        # await Utils.wrapped_execute(action_query, cleanup)

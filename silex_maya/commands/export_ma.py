@@ -70,6 +70,7 @@ class ExportMa(CommandBase):
         directory: str = str(parameters.get("directory"))
         file_name: str = str(parameters.get("file_name"))
         full_scene: bool = False
+        export_valid: bool =  False
         
         # Check for extension
         if "." in file_name:
@@ -83,17 +84,19 @@ class ExportMa(CommandBase):
         future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
         slection_list: List[str] = await future
 
-        while not len(slection_list):
+        if len(slection_list):
+            export_valid =  True
+
+        while not export_valid:
             full_scene = await self._prompt_select_parameter(action_query)
             future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
             slection_list = await future
+            if len(slection_list) or full_scene:
+                export_valid =  True
 
         os.makedirs(directory, exist_ok=True)
         cmds.file(export_path, ea=full_scene, exportSelected=not(full_scene), pr=True, typ="mayaAscii")
 
-        # Test if the export worked
-        import time
-        time.sleep(1)
 
         if not os.path.exists(export_path):
             raise Exception(
