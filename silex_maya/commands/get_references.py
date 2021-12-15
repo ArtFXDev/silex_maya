@@ -113,7 +113,7 @@ class GetReferences(CommandBase):
         # Define the function to get all the referenced files in the scene
         def get_referenced_files():
             cmds.filePathEditor(rf=True)
-            referenced_files = []
+            referenced_files: List[Tuple[str, pathlib.Path]] = []
 
             # Get the referenced files from the file path editor
             for attribute in cmds.filePathEditor(q=True, lf="", ao=True) or []:
@@ -122,7 +122,7 @@ class GetReferences(CommandBase):
                     continue
                 # If the attribute is a maya/alembic/... reference
                 if cmds.nodeType(attribute) == "reference":
-                    file_path = cmds.referenceQuery(attribute, filename=True)
+                    file_path = cmds.referenceQuery(attribute, filename=True, withoutCopyNumber=True)
                     referenced_files.append((attribute, pathlib.Path(file_path)))
                     continue
                 # Otherwise, just get the attribute for simple stuff like file nodes
@@ -131,16 +131,19 @@ class GetReferences(CommandBase):
             return referenced_files
 
         # Execute the get_referenced_files in the main thread
-        referenced_files = await Utils.wrapped_execute(
+        referenced_files = await (await Utils.wrapped_execute(
             action_query, get_referenced_files
-        )
+        ))
+
+        # Remove duplicates references
+        referenced_files = list(set(referenced_files))
 
         # Each referenced file must be verified
         references_found: References = []
 
         # Check if the referenced files are reachable and prompt the user if not
         skip_all = False
-        for attribute, file_path in await referenced_files:
+        for attribute, file_path in referenced_files:
             # Make sure the file path leads to a reachable file
             skip = False
             while (not file_path.exists() or not file_path.is_absolute()):
