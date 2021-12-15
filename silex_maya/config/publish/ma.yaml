@@ -5,7 +5,7 @@ ma:
       index: 50
       commands:
         export_ma:
-          label: "Export in OBJ"
+          label: "Export in ma"
           path: "silex_maya.commands.export_ma.ExportMa"
           parameters:
             directory: !command-output "setup:build_output_path:temp_directory"

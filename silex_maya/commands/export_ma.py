@@ -97,9 +97,6 @@ class ExportMa(CommandBase):
         os.makedirs(directory, exist_ok=True)
         cmds.file(export_path, ea=full_scene, exportSelected=not(full_scene), pr=True, typ="mayaAscii")
 
-        # Test if the export worked
-        import time
-        time.sleep(1)
 
         if not os.path.exists(export_path):
             raise Exception(
