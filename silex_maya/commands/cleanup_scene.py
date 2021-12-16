@@ -11,7 +11,7 @@ from silex_maya.utils.utils import Utils
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from maya import cmds, mel
+from maya import cmds
 
 
 class CleanupScene(CommandBase):
@@ -21,12 +21,16 @@ class CleanupScene(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         def cleanup():
-            # This delete all the history
-            cmds.delete(cmds.ls(), constructionHistory = True)
-            # This remove all the unused stuff
-            mel.eval("cleanUpScene 3")
+            # Clean unknown nodes
+            unknown_nodes = cmds.ls(type="unknown")
 
-        # await Utils.wrapped_execute(action_query, cleanup)
+            if unknown_nodes:
+                cmds.delete(unknown_nodes)
+
+        await Utils.wrapped_execute(action_query, cleanup)
