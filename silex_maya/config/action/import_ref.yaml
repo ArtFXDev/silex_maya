@@ -1,0 +1,10 @@
+import_ref:
+  steps:
+    import_ref:
+      label: "Import Reference"
+      index: 50
+      commands:
+        import_ref:
+          label: "Import Reference file"
+          path: "silex_maya.commands.import_ref.ImportRef"
+          ask_user: true
