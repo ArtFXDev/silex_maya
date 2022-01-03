@@ -40,30 +40,40 @@ class ExportVrscene(CommandBase):
     }
 
 
-    async def _prompt_select_parameter(
-        self, action_query: ActionQuery
+    async def _prompt_warning(
+        self, action_query: ActionQuery, export_valid: bool
     ) -> bool:
         """
         Helper to prompt the user a label
         """
-        # Create a new parameter to prompt label
+        # check if export is valid
+        while not export_valid:
+            # Create a new parameter to prompt label
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta('warning'),
+                name="Info",
+                label="Info",
+            )
+            bool_parameter = ParameterBuffer(
+                type=bool,
+                name="full_scene",
+                label='Publish full scene',
+                value=True
+            )
+            # Prompt the user with a label
+            prompt: Dict[str, ANy] = await self.prompt_user(action_query, {"info": info_parameter, 'full_scene': bool_parameter})
 
-        info_parameter = ParameterBuffer(
-            type=TextParameterMeta('warning'),
-            name="Info",
-            label="Info",
-            # value=f"WARNING: No selection detected -> Please selecte somthing or publish full scene",
-        )
-        bool_parameter = ParameterBuffer(
-            type=bool,
-            name="full_scene",
-            label='Publish full scene',
-            value=True
-        )
-        # Prompt the user with a label
-        prompt: Dict[str, ANy] = await self.prompt_user(action_query, {"info": info_parameter, 'full_scene': bool_parameter})
+            # get selected objects
+            future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
+            slection_list = await future
 
-        return prompt['full_scene']
+            if len(slection_list) or prompt['full_scene']:
+                export_valid =  True     
+        
+            return prompt['full_scene']
+            
+       
+
 
     @ CommandBase.conform_command()
     async def __call__(
@@ -90,15 +100,12 @@ class ExportVrscene(CommandBase):
         if len(slection_list):
             export_valid =  True
 
-        while not export_valid:
-            full_scene = await self._prompt_select_parameter(action_query)
-            future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
-            slection_list = await future
-            if len(slection_list) or full_scene:
-                export_valid =  True
+        # check if export is valid
+        full_scene = await self._prompt_warning(action_query, export_valid)
         
+        # export 
         await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
-                                    pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
+                                    pr=True, ea=not(full_scene), es=full_scene, typ="V-Ray Scene")
 
         if not os.path.exists(export_path):
             raise Exception(
