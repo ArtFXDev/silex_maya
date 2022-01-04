@@ -63,13 +63,12 @@ class ExportAss(CommandBase):
             "type": bool,
             "value": True,
         },
-
         "options": {
             "label": "Options",
             "type": bool,
             "value": True,
         },
-        "lights": {
+        "lights_and_shadow": {
             "label": "Lights",
             "type": bool,
             "value": True,
@@ -135,7 +134,7 @@ class ExportAss(CommandBase):
         def compute_mask() -> int:
             options: bool = parameters.get('options')
             camera: bool = bool(parameters.get('camera') != 'No camera')
-            light: bool = parameters.get('lights')
+            light: bool = parameters.get('lights_and_shadow')
             shape: bool = parameters.get('shapes')
             shader: bool = parameters.get('shaders')
             override: bool = parameters.get('override')
@@ -156,8 +155,8 @@ class ExportAss(CommandBase):
         export_path = f'{export_path_without_ext}.ass'
         frame_range: FrameSet = parameters.get('frame_range')
         sel: str = parameters.get('selection')
-        Llinks: bool = parameters.get('light')
-        Slinks: bool = parameters.get('light')
+        Llinks: bool = parameters.get('lights_and_shadow')
+        Slinks: bool = parameters.get('lights_and_shadow')
         Bbox: bool = parameters.get('bounding_box')
         cam: str = parameters.get('camera')
         binary: bool = parameters.get('binary_encoding')
