@@ -98,6 +98,7 @@ class ExportMa(CommandBase):
         # export
         os.makedirs(directory, exist_ok=True)
         await Utils.wrapped_execute(action_query,  cmds.file, export_path, es=not(full_scene), ea=full_scene, pr=True, typ="mayaAscii")
+
        
 
 
