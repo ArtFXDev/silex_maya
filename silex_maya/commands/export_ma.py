@@ -66,7 +66,7 @@ class ExportMa(CommandBase):
                 if len(slection_list) or prompt['full_scene']:
                     export_valid =  True     
             
-                return prompt['full_scene']
+                    return prompt['full_scene']
 
 
     @CommandBase.conform_command()
@@ -92,14 +92,14 @@ class ExportMa(CommandBase):
 
         if len(slection_list):
             export_valid =  True
-
         
         # check if export is valid
-        full_scene = await self._prompt_warning(action_query, export_valid)
+        if not export_valid:
+            full_scene = await self._prompt_warning(action_query, export_valid)
 
         # export
         os.makedirs(directory, exist_ok=True)
-        await Utils.wrapped_execute(action_query,  cmds.file, export_path, ea=not(full_scene), exportSelected=full_scene, pr=True, typ="mayaAscii")
+        await Utils.wrapped_execute(action_query,  cmds.file, export_path, ea=full_scene, exportSelected=not(full_scene), pr=True, typ="mayaAscii")
        
 
 
