@@ -58,9 +58,14 @@ class Open(CommandBase):
             # Check if there is some modifications to save
             file_state = cmds.file(q=True, modified=True)
             current_file = cmds.file(q=True, sn=True)
+
+            # Don't open the scene if it is already open
+            if pathlib.Path(current_file) == file_path:
+                return
             # Save the current scene before openning a new one
             if file_state and current_file and parameters["save"]:
                 cmds.file(save=True, force=True)
+
             cmds.file(file_path, o=True, force=True)
 
         # Execute the open function in the main thread
