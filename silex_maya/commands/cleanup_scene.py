@@ -30,7 +30,8 @@ class CleanupScene(CommandBase):
             # Clean unknown nodes
             unknown_nodes = cmds.ls(type="unknown")
 
-            if unknown_nodes:
-                cmds.delete(unknown_nodes)
+            for unknown_node in unknown_nodes:
+                cmds.lockNode(unknown_node, lock=False)
+                cmds.delete(unknown_node)
 
         await Utils.wrapped_execute(action_query, cleanup)
