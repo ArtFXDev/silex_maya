@@ -6,6 +6,7 @@ import pathlib
 from silex_maya.utils import utils
 from silex_client.action.command_base import CommandBase
 import logging
+
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -34,13 +35,16 @@ class Open(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         file_path = parameters["file_path"]
 
         # First get the current file name
         current_file = await utils.Utils.wrapped_execute(
-            action_query, cmds.file, q=True, sn=True
+            action_query, cmds.file, q=True, sn=True, prompt=False
         )
         current_file = await current_file
 
