@@ -3,6 +3,8 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.action.parameter_buffer import ParameterBuffer
+from silex_client.utils.parameter_types import TextParameterMeta
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -37,6 +39,45 @@ class ExportVrscene(CommandBase):
         },
     }
 
+
+    async def _prompt_warning(
+        self, action_query: ActionQuery
+    ) -> bool:
+        """
+        Helper to prompt the user a label
+        """
+
+        export_valid: bool =  False
+
+        # check if export is valid
+        while not export_valid:
+            # Create a new parameter to prompt label
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta('warning'),
+                name="Info",
+                label="Info",
+            )
+            bool_parameter = ParameterBuffer(
+                type=bool,
+                name="full_scene",
+                label='Publish full scene',
+                value=True
+            )
+            # Prompt the user with a label
+            prompt: Dict[str, ANy] = await self.prompt_user(action_query, {"info": info_parameter, 'full_scene': bool_parameter})
+
+            # get selected objects
+            future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
+            slection_list = await future
+
+            if len(slection_list) or prompt['full_scene']:
+                export_valid =  True     
+        
+                return prompt['full_scene']
+            
+       
+
+
     @ CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
@@ -44,7 +85,7 @@ class ExportVrscene(CommandBase):
 
         directory: str = str(parameters["file_dir"])
         file_name: str = str(parameters["file_name"])
-        selected: bool = True
+        full_scene: bool = False
         
         # Check for extension
         if "." in file_name:
@@ -52,18 +93,36 @@ class ExportVrscene(CommandBase):
           
         export_path: str = f"{directory}{os.path.sep}{file_name}.vrscene"
 
-        # Export the selection in OBJ
+        # Export the selection in vrscene
         os.makedirs(directory, exist_ok=True)
 
-        selection = await Utils.wrapped_execute(action_query, cmds.ls, sl=True)
-        selection = selection.result()
-        if not len(selection):
-            selected = False
+        future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
+        slection_list: List[str] = await future
+
+        if not len(slection_list):
+            full_scene = await self._prompt_warning(action_query)
         
+        # export 
         await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
-                                    pr=True, ea=not(selected), es=selected, typ="V-Ray Scene")
+                                    pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
 
         if not os.path.exists(export_path):
             raise Exception(
                 f"An error occured while exporting {export_path} to vrscene")
         return export_path
+    
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+        if 'info' in parameters:
+            if parameters.get("full_scene", False):            
+                self.command_buffer.parameters["info"].type = TextParameterMeta('warning')
+                self.command_buffer.parameters["info"].value = "WARNING: No selection detected -> Please selecte somthing or publish full scene"
+            else:
+                self.command_buffer.parameters["info"].type = TextParameterMeta('info')
+                self.command_buffer.parameters["info"].value = 'Select somthing to publish'
+

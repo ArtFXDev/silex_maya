@@ -1,10 +1,10 @@
-vrscene:
+ass:
   steps:
     export:
       label: "Export"
       index: 50
       commands:
-        export_vrscene:
+        export_ass:
           label: "Export in ass"
           path: "silex_maya.commands.export_ass.ExportAss"
           ask_user: true
