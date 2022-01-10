@@ -82,7 +82,7 @@ class ExportFBX(CommandBase):
                 end_frame = cmds.playbackOptions(q=True, animationEndTime=True)
 
             cmds.select(object_list)
-            cmds.bakeSimulation(object_list) # Needed
+            cmds.bakeResults(object_list) # Needed
             cmds.FBXExportSplitAnimationIntoTakes("-clear")
             cmds.FBXExportSplitAnimationIntoTakes("-v", "Maya_FBX_Export_Take", start_frame, end_frame)
             cmds.FBXExport("-f", export_path, "-s")
