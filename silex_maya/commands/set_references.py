@@ -36,7 +36,6 @@ class SetReferences(CommandBase):
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         attributes: List[str] = parameters["attributes"]
-
         values = []
         # TODO: This should be done in the get_value method of the ParameterBuffer
         for value in parameters["values"]:
@@ -53,9 +52,18 @@ class SetReferences(CommandBase):
             # If the attribute if from an other referenced scene
             if cmds.referenceQuery(attribute, isNodeReferenced=True):
                 return ""
-
+            
             # If it is just a file node or a texture...
+            split_attributes = attribute.split(".")
+            if len(split_attributes) == 0:
+                raise Exception("split_attributes is empty.") # this should never happen
+
+            base_node = split_attributes[0]
+            aces_attribute = f"{base_node}.colorSpace"
+            aces_value = cmds.getAttr(aces_attribute)
+            
             cmds.setAttr(attribute, value, type="string")
+            cmds.setAttr(aces_attribute, aces_value, type="string")
             return value
 
         # Execute the function in the main thread
