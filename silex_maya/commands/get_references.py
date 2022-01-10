@@ -150,11 +150,10 @@ class GetReferences(CommandBase):
         # Check if the referenced files are reachable and prompt the user if not
         skip_all = False
         for attribute, file_path in referenced_files:
-            if not is_valid_path(file_path) or not file_path.exists():
-                # The value might be using a special pattern, we need to use findAllFilesForPattern
-                file_sequence = ftpr.findAllFilesForPattern(str(file_path), None)
-                if len(file_sequence) > 0:
-                    file_path = [pathlib.Path(str(file)) for file in file_sequence][0]
+            # The value might be using a special pattern, we need to use findAllFilesForPattern
+            file_sequence = ftpr.findAllFilesForPattern(str(file_path), None)
+            if len(file_sequence) > 0:
+                file_path = [pathlib.Path(str(file)) for file in file_sequence][0]
 
             # Make sure the file path leads to a reachable file
             skip = False
