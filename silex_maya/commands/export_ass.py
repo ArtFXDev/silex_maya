@@ -114,10 +114,9 @@ class ExportAss(CommandBase):
 
             ## loop for end and
             for frame in frame_range:
-                ass = f'{path}_{frame}.ass'
                 exported_ass.append(path)
                 cmds.arnoldExportAss(
-                    f=ass,
+                    f=path,
                     cam=cam,
                     sf=frame,
                     ef=frame,
@@ -165,8 +164,6 @@ class ExportAss(CommandBase):
         # Export the selection as ass sequence
         os.makedirs(directory, exist_ok=True)
         frame_list: List[str] = list(FrameSet(frame_range))
-        logger.error(frame_list)
-        logger.error(type(frame_list[0]))
         exported_ass = await Utils.wrapped_execute(action_query, lambda: export_sequence(export_path_without_ext, frame_list, cam, sel, Llinks, Slinks, Bbox, binary, mask))
 
         # Test if the export worked
