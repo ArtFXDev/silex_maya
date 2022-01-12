@@ -16,25 +16,25 @@ ma:
           path: "silex_maya.commands.open.Open"
           parameters:
             file_path: !command-output "input:input:file_paths"
-            # save: True
-        # cleanup:
-        #   label: "Cleanup scene"
-        #   path: "silex_maya.commands.cleanup_scene.CleanupScene"
-        # get_references:
-        #   label: "Get referenced files"
-        #   path: "silex_maya.commands.get_references.GetReferences"
-        # conform_references:
-        #   label: "Conform references found"
-        #   path: "silex_client.commands.iterate_action.IterateAction"
-        #   parameters:
-        #     values: !command-output "conform_references:get_references:file_paths"
-        #     actions:
-        #       - "conform"
-        #     categories:
-        #       - "action"
-        #     parameter: "setup:get_conform_output:file_paths"
-        #     label_key: "file_paths"
-        #     output: "setup:append_conform_actions"
+            save: True
+        cleanup:
+          label: "Cleanup scene"
+          path: "silex_maya.commands.cleanup_scene.CleanupScene"
+        get_references:
+          label: "Get referenced files"
+          path: "silex_maya.commands.get_references.GetReferences"
+        conform_references:
+          label: "Conform references found"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            values: !command-output "conform_references:get_references:file_paths"
+            actions:
+              - "conform"
+            categories:
+              - "action"
+            parameter: "setup:get_conform_output:file_paths"
+            label_key: "file_paths"
+            output: "setup:append_conform_actions"
 
     conform_scene:
       label: "Conform Maya scene"
