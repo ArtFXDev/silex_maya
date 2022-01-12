@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
 import logging
+
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
