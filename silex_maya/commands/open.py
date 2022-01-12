@@ -64,9 +64,9 @@ class Open(CommandBase):
                 return
             # Save the current scene before openning a new one
             if file_state and current_file and parameters["save"]:
-                cmds.file(save=True, force=True)
+                cmds.file(save=True)
 
-            cmds.file(file_path, o=True, force=True)
+            cmds.file(file_path, o=True)
 
         # Execute the open function in the main thread
         logger.info("Openning file %s", file_path)
