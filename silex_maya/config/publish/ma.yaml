@@ -37,9 +37,23 @@ ma:
             attributes: !command-output "check_references:get_references:attributes"
             values: !command-output "check_references:conform_references"
 
+    preview:
+      label: "Preview"
+      index: 50
+      commands:
+        capture_preview:
+          label: "Capture preview"
+          path: "silex_maya.commands.capture_preview.CapturePreview"
+
+        upload_preview:
+          label: "Upload preview"
+          path: "silex_maya.commands.upload_preview.UploadPreview"
+          parameters:
+            preview_path: !command-output "preview:capture_preview:thumbnail"
+
     export:
       label: "Export"
-      index: 50
+      index: 60
       commands:
         export_ma:
           label: "Export as ma"
@@ -49,7 +63,7 @@ ma:
             file_name: !command-output "setup:build_output_path:file_name"
     move:
       label: "Move"
-      index: 60
+      index: 70
       commands:
         move:
           label: "Move"
