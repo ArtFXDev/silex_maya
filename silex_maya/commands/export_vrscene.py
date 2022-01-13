@@ -103,8 +103,8 @@ class ExportVrscene(CommandBase):
             full_scene = await self._prompt_warning(action_query)
         
         # export 
-        await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
-                                    pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
+        await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True,
+                    pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
 
         if not os.path.exists(export_path):
             raise Exception(

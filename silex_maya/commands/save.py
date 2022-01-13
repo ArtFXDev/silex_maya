@@ -30,7 +30,7 @@ class Save(CommandBase):
     ):
         def save(file_path: str):
             cmds.file(rename=file_path)
-            cmds.file(save=True, force=True, type="mayaAscii", prompt=False)
+            cmds.file(save=True, type="mayaAscii", prompt=False)
 
         file_path = parameters["file_path"]
         logger.info(file_path)
