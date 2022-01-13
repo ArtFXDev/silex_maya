@@ -1,16 +1,15 @@
 from __future__ import annotations
-import typing
-from typing import Any, Dict
-import logging
-from maya import cmds
-from maya import mel  
-import tempfile
-import uuid
 
-from typing import Optional
+import logging
+import pathlib
+import tempfile
+import typing
+import uuid
+from typing import Any, Dict, Optional
+
+from maya import cmds, mel
 from silex_client.action.command_base import CommandBase
 from silex_maya.utils.utils import Utils
-
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -21,47 +20,43 @@ class CapturePreview(CommandBase):
     """
     Capture the current viewport either as a playblast or a single frame
     """
-    
-    
+
     def create_thumbnail(self) -> Optional[str]:
-    
-        # 6 name thumbnail
-        file_name = str(uuid.uuid1())
+        file_name = str(uuid.uuid4())
 
-        # export path
-        tmp_path = str(tempfile.gettempdir()) + "\\{}".format(file_name)
-        tmp_path = tmp_path.replace('\\', '/')
+        # Create temp path
+        tmp_path = (pathlib.Path(tempfile.gettempdir()) / file_name).as_posix()
 
-        # get current frame
         current_frame = int(cmds.currentTime(query=True))
 
-        default = ["front", "persp", "side", "top"]
-        cam_lst = cmds.listCameras()
-        cam_lst = list(set(cam_lst) - set(default))
+        # Filter user cameras
+        default_cameras = ["front", "persp", "side", "top"]
+        scene_cameras = cmds.listCameras()
+        non_default_cameras = list(set(scene_cameras) - set(default_cameras))
 
-        width = 1080 or int(cmds.getAttr("defaultResolution.width"))
-        height = 720 or int(cmds.getAttr("defaultResolution.height"))
-        deviceAspectRatio = width / float(height)
+        preview_width = 1920
+        preview_height = preview_width * 0.6
 
-        if len(cam_lst):
-            cmds.lookThru(cam_lst[0])
-            cmds.setAttr("defaultResolution.deviceAspectRatio", deviceAspectRatio)
-            mel.eval(f'playblast  -format image -filename "{tmp_path}" -clearCache 1 -viewer 0 -frame 1 -showOrnaments 0 -percent 50 -compression "jpg" -quality 70 -widthHeight {width} {height};')
-            return f"{tmp_path}.0000.jpg"
+        if len(non_default_cameras):
+            cmds.lookThru(non_default_cameras[0])
 
-        cmds.setAttr("defaultResolution.deviceAspectRatio", deviceAspectRatio)
-        mel.eval(f'playblast  -format image -filename "{tmp_path}" -clearCache 1 -viewer 0 -frame 1 -showOrnaments 0 -percent 50 -compression "jpg" -quality 70 -widthHeight {width} {height};')
-
+        mel.eval(
+            f'playblast -format image -filename "{tmp_path}" -clearCache 1 -viewer 0 -frame {current_frame} -showOrnaments 0 -percent 50 -compression "jpg" -quality 70 -widthHeight {preview_width} {preview_height};'
+        )
 
         return f"{tmp_path}.0000.jpg"
 
-
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         # Take a thumbnail of the current viewport
-        thumbnail_future = await Utils.wrapped_execute(action_query, self.create_thumbnail)
+        thumbnail_future = await Utils.wrapped_execute(
+            action_query, self.create_thumbnail
+        )
         thumbnail = thumbnail_future.result()
 
         return thumbnail
