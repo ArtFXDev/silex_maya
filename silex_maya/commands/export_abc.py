@@ -73,7 +73,7 @@ class ExportABC(CommandBase):
 
         # authorized type
         authorized_type = ["transform", "mesh", "camera"]
-        
+
         # list of path to return
         to_return_paths = []
 

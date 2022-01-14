@@ -8,6 +8,9 @@ build:
       commands:
         build_work_path:
           path: "silex_client.commands.build_work_path.BuildWorkPath"
+        focus_maya:
+          label: "Focus DCC"
+          path: "silex_client.commands.focus.Focus"
         save_scene:
           path: "silex_maya.commands.save.Save"
           parameters:
