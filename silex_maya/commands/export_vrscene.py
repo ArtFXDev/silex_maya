@@ -120,9 +120,9 @@ class ExportVrscene(CommandBase):
     ):
         if 'info' in parameters:
             if parameters.get("full_scene", False):            
-                self.command_buffer.parameters["info"].type = TextParameterMeta('warning')
-                self.command_buffer.parameters["info"].value = "WARNING: No selection detected -> Please selecte somthing or publish full scene"
-            else:
                 self.command_buffer.parameters["info"].type = TextParameterMeta('info')
+                self.command_buffer.parameters["info"].value = "No selection detected -> Please selecte somthing or publish full scene"
+            else:
+                self.command_buffer.parameters["info"].type = TextParameterMeta('warning')
                 self.command_buffer.parameters["info"].value = 'Select somthing to publish'
 
