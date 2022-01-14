@@ -6,11 +6,13 @@ ma:
       commands:
         input:
           path: "silex_client.commands.pass.Pass"
-
     conform_references:
       label: "Conform Maya scene's references"
       index: 20
       commands:
+        focus_maya:
+          label: "Focus DCC"
+          path: "silex_client.commands.focus.Focus"
         open:
           label: "Open scene to conform"
           path: "silex_maya.commands.open.Open"
@@ -35,7 +37,6 @@ ma:
             parameter: "setup:get_conform_output:file_paths"
             label_key: "file_paths"
             output: "setup:append_conform_actions"
-
     conform_scene:
       label: "Conform Maya scene"
       index: 30
@@ -62,18 +63,24 @@ ma:
           parameters:
             attributes: !command-output "conform_references:get_references:attributes"
             values: !command-output "conform_references:conform_references"
+        
+        focus_maya:
+          label: "Focus DCC"
+          path: "silex_client.commands.focus.Focus"
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
           parameters:
             file_path: !command-output "conform_scene:build_output_path:full_path"
+        focus_maya:
+          label: "Focus DCC"
+          path: "silex_client.commands.focus.Focus"
         open:
           label: "Open back the original scene"
           path: "silex_maya.commands.open.Open"
           parameters:
             file_path: !command-output "conform_references:open:old_path"
             save: False
-
     output:
       index: 40
       hide: true
