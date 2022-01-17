@@ -41,21 +41,53 @@ ma:
       label: "Conform Maya scene"
       index: 30
       commands:
+        get_conform_cache:
+          label: "Get previous conform location"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+          hide: true
+        get_fast_conform_cache:
+          label: "Check fast conform"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "fast_conform_enabled"
+            key_suffix: !command-output "input:input:file_paths"
+            default: false
+          hide: true
         build_output_path:
           label: "Build output path"
-          path: "silex_client.commands.build_output_path.BuildOutputPath"
+          path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
           tooltip: "Build the complete output path"
           parameters:
+            task: !command-output "conform:get_conform_cache:value"
+            fast_conform: !command-output "conform:get_fast_conform_cache:value"
             use_current_context: false
             create_temp_dir: false
-            frame_set:
-              value: 0
-              hide: true
+            frame_set: !command-output "input:input:frame_set"
             output_type:
               value: "ma"
               hide: true
-            name: !command-output "input:input:file_paths"
+            files: !command-output "input:input:file_paths"
+            padding: !command-output "input:input:padding"
           ask_user: true
+        set_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "conform:build_output_path:task"
+          hide: true
+        set_fast_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "fast_conform_enabled"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "conform:build_output_path:fast_conform"
+          hide: true
         repath_attributes:
           label: "Repath attributes"
           path: "silex_maya.commands.set_references.SetReferences"
