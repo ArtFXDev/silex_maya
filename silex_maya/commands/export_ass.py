@@ -11,7 +11,8 @@ if typing.TYPE_CHECKING:
 
 from silex_maya.utils.utils import Utils
 
-import maya.cmds as cmds
+from maya import cmds
+import gazu.files
 from fileseq import FrameSet
 import os
 import pathlib
@@ -23,7 +24,7 @@ class ExportAss(CommandBase):
     """
 
     parameters = {
-        "file_dir": {
+        "directory": {
             "label": "File directory",
             "type": pathlib.Path,
             "value": None,
@@ -100,85 +101,94 @@ class ExportAss(CommandBase):
         },
     }
 
+    def compute_mask(self, options: bool, camera: bool, light: bool, shape: bool, shader: bool, override: bool, diver: bool, filters: bool) -> int:
+        """Compute arnold mask from parameters"""
+
+        return 1*options + 2*camera + 4*light + 8*shape + \
+            16*shader + 32*override + 64*diver + 128*filters
+
+    def format_to_4_digits(self, frame: int) -> str:
+        """Format frame number to 4 digits"""
+
+        frame = str(frame)
+        for i in range(4 - len(frame)):
+            frame = "0" + frame
+        
+        return frame
+
+    def export_sequence(self, path: pathlib.Path, extension: str, frame_range: List[int], cam: str, sel: List[str], Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> List[str]:
+        """Export ass for each frame"""
+
+        # Set export rule for maya 
+        cmds.workspace(fileRule=['ASS', path.parents[0]])
+
+        exported_ass = list()
+
+        ## Loop for end and
+        for frame in frame_range:
+            exported_ass.append(f"{path}.{self.format_to_4_digits(frame)}.{extension}")
+            cmds.arnoldExportAss(
+                f=path,
+                cam=cam,
+                sf=frame,
+                ef=frame,
+                s=sel,
+                lightLinks=Llinks,
+                shadowLinks=Slinks,
+                boundingBox=Bbox,
+                asciiAss=bool(1-binary),
+                mask=mask,
+            )
+            
+        return exported_ass
+
     @CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
+        file_name: pathlib.Path = parameters["file_name"]
+        directory: pathlib.Path = parameters["directory"] / file_name  # Directory parameter is temp directory
+               
+        frame_range: FrameSet = parameters['frame_range']
 
-        def export_sequence(path: str, frame_range: List[str], cam: str, sel: List[str], Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> List[str]:
+        sel: str = parameters['selection']
+        Llinks: bool = parameters['lights_and_shadow']
+        Slinks: bool = parameters['lights_and_shadow']
+        Bbox: bool = parameters['bounding_box']
+        cam: str = parameters['camera']
+        binary: bool = parameters["binary_encoding"]
 
-            p = pathlib.Path(path)
-            cmds.workspace(fileRule=['ASS', p.parents[0]])
-
-            exported_ass = list()
-
-            ## loop for end and
-            for frame in frame_range:
-                exported_ass.append(path)
-                cmds.arnoldExportAss(
-                    f=path,
-                    cam=cam,
-                    sf=frame,
-                    ef=frame,
-                    s=sel,
-                    lightLinks=Llinks,
-                    shadowLinks=Slinks,
-                    boundingBox=Bbox,
-                    asciiAss=bool(1-binary),
-                    mask=mask,
-                )
-                
-            return exported_ass
-
-        def compute_mask() -> int:
-            options: bool = parameters.get('options')
-            camera: bool = bool(parameters.get('camera') != 'No camera')
-            light: bool = parameters.get('lights_and_shadow')
-            shape: bool = parameters.get('shapes')
-            shader: bool = parameters.get('shaders')
-            override: bool = parameters.get('override')
-            diver: bool = parameters.get('diver')
-            filters: bool = parameters.get('filters')
-
-            return 1*options + 2*camera + 4*light + 8*shape + \
-                16*shader + 32*override + 64*diver + 128*filters
-
-        file_name: str = str(parameters.get("file_name"))
-        directory: str = f'{str(parameters.get("file_dir"))}{os.path.sep}{file_name}'
+        options: bool = parameters['options']
+        camera: bool = bool(parameters['camera'] != 'No camera')
+        light: bool = parameters['lights_and_shadow']
+        shape: bool = parameters['shapes']
+        shader: bool = parameters['shaders']
+        override: bool = parameters['override']
+        diver: bool = parameters['diver']
+        filters: bool = parameters['filters']
         
-        # Check for extension
-        if "." in file_name:
-            file_name = file_name.split('.')[0]
-          
-        export_path_without_ext: str = f"{directory}{os.path.sep}{file_name}"
-        export_path = f'{export_path_without_ext}.ass'
-        frame_range: FrameSet = parameters.get('frame_range')
-        sel: str = parameters.get('selection')
-        Llinks: bool = parameters.get('lights_and_shadow')
-        Slinks: bool = parameters.get('lights_and_shadow')
-        Bbox: bool = parameters.get('bounding_box')
-        cam: str = parameters.get('camera')
-        binary: bool = parameters.get('binary_encoding')
-        mask: int = compute_mask()
+        # Compute mask
+        mask: int = self.compute_mask(options, camera, light, shape, shader, override, diver, filters)
 
-        # Export the selection as ass sequence
+        # Create export path
+        export_path_without_extention: pathlib.Path = directory / file_name
+
+        # Export the selection as ass sequence (in temp directory)
         os.makedirs(directory, exist_ok=True)
-        frame_list: List[str] = list(FrameSet(frame_range))
-        exported_ass = await Utils.wrapped_execute(action_query, lambda: export_sequence(export_path_without_ext, frame_list, cam, sel, Llinks, Slinks, Bbox, binary, mask))
+        frame_list: List[int] = list(FrameSet(frame_range))
+        extension: str = await gazu.files.get_output_type_by_name("ass")
+        exported_ass: Future = await Utils.wrapped_execute(action_query, self.export_sequence, export_path_without_extention, extension['short_name'], frame_list, cam, sel, Llinks, Slinks, Bbox, binary, mask)
+        exported_ass: List[str] = await exported_ass
 
-        # Test if the export worked
-        import time
-        time.sleep(1)
-
-        missing_ass: str = ''
+        # look form missing ass
+        missing_ass: List[int] = list()
         for ass in exported_ass:
 
             if not os.path.exists(ass):
-                missing_ass += frame_list[exported_ass.index(ass)] + ' ; '
-
-        if missing_ass != '':
-            raise Exception(
-                f"An error occured while exporting {export_path} to ASS")
+                missing_ass.append(frame_list[exported_ass.index(ass)]) 
+        
+        if len(missing_ass):
+            logger.error(f"An error occured while exporting to ASS -> Frames : {'; '.join(missing_ass)} were not exported")
 
         return directory
 
@@ -190,7 +200,7 @@ class ExportAss(CommandBase):
         logger: logging.Logger,
     ):
 
-        
+        # Add existing cameras to the parameters list
         cam_list = await Utils.wrapped_execute(action_query, cmds.listCameras)
         cam_list = cam_list.result()
         cam_list.append('No camera')

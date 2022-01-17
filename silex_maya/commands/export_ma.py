@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from concurrent.futures import Future
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
@@ -13,6 +14,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import logging
+import gazu.files
 import os
 import pathlib
 
@@ -42,7 +44,7 @@ class ExportMa(CommandBase):
         Helper to prompt the user a label
         """
 
-        # check if export is valid
+        # Check if export is valid
         while True:
             # Create a new parameter to prompt label
             info_parameter = ParameterBuffer(
@@ -60,7 +62,7 @@ class ExportMa(CommandBase):
                 action_query, {"info": info_parameter, "full_scene": bool_parameter}
             )
 
-            # get selected objects
+            # Get selected objects
             future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
             slection_list = await future
 
@@ -75,24 +77,22 @@ class ExportMa(CommandBase):
         logger: logging.Logger,
     ):
 
-        directory: str = str(parameters.get("directory"))
-        file_name: str = str(parameters.get("file_name"))
+        directory: pathlib.Path = parameters["directory"] # Directory parameter is temp directory
+        file_name: pathlib.Path = parameters["file_name"]
         full_scene: bool = False
 
-        # Check for extension
-        if "." in file_name:
-            file_name = file_name.split(".")[0]
-
-        export_path: str = f"{directory}{os.path.sep}{file_name}.ma"
+        extension = await gazu.files.get_output_type_by_name("ma")
+        export_path: pathlib.Path = (directory / file_name).with_suffix(f".{extension['short_name']}")
 
         # Export the selection in ma
-        future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
+        future: Future = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
         slection_list: List[str] = await future
 
+        # Prompt warning
         if not len(slection_list):
             full_scene = await self._prompt_warning(action_query)
 
-        # export
+        # Export in temps directory
         os.makedirs(directory, exist_ok=True)
         await Utils.wrapped_execute(
             action_query,
@@ -114,6 +114,7 @@ class ExportMa(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        # Warning message
         if "info" in parameters:
             if parameters.get("full_scene", False):
                 self.command_buffer.parameters["info"].type = TextParameterMeta(

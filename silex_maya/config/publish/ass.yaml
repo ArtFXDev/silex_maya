@@ -9,7 +9,7 @@ ass:
           path: "silex_maya.commands.export_ass.ExportAss"
           ask_user: true
           parameters:
-            file_dir: !command-output "setup:build_output_path:temp_directory"
+            directory: !command-output "setup:build_output_path:temp_directory"
             file_name: !command-output "setup:build_output_path:file_name"
     move:
       label: "Move"
