@@ -36,16 +36,21 @@ vrscene:
           parameters:
             attributes: !command-output "check_references:get_references:attributes"
             values: !command-output "check_references:conform_references"
-
     export:
       label: "Export"
       index: 50
       commands:
+        load_plugin:
+          label: "Ensure Vray Plugin is load"
+          path: "silex_maya.commands.load_plugin.LoadPlugin"
+          ask_user: false
+          parameters:
+            plugin_name: "vrayformaya"
         export_vrscene:
           label: "Export in vrscene"
           path: "silex_maya.commands.export_vrscene.ExportVrscene"
           parameters:
-            file_dir: !command-output "setup:build_output_path:temp_directory"
+            directory: !command-output "setup:build_output_path:temp_directory"
             file_name: !command-output "setup:build_output_path:file_name"
     move:
       label: "Move"

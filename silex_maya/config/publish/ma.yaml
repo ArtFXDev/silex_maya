@@ -62,3 +62,17 @@ ma:
           path: "silex_client.commands.remove.Remove"
           parameters:
             file_path: !command-output "setup:build_output_path:temp_directory"
+
+    preview:
+      label: "Preview"
+      index: 70
+      commands:
+        capture_preview:
+          label: "Capture preview"
+          path: "silex_maya.commands.capture_preview.CapturePreview"
+
+        upload_preview:
+          label: "Upload preview"
+          path: "silex_maya.commands.upload_preview.UploadPreview"
+          parameters:
+            preview_path: !command-output "preview:capture_preview:thumbnail"

@@ -9,7 +9,7 @@ from typing import Any, Dict, Tuple, List, Union
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
-from silex_client.utils.files import is_valid_pipeline_path
+from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
 from silex_maya.utils.utils import Utils
 
 # Forward references
@@ -17,6 +17,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 from maya import cmds
+import maya.app.general.fileTexturePathResolver as ftpr
 
 
 References = List[
@@ -37,14 +38,14 @@ class GetReferences(CommandBase):
             "label": "Skip conformed references",
             "type": bool,
             "value": True,
-            "tooltip": "The references that point to a file that is already in the right folder will be skipped"
+            "tooltip": "The references that point to a file that is already in the right folder will be skipped",
         },
         "filters": {
             "label": "Custom filters",
             "type": ListParameterMeta(str),
             "value": [],
             "tooltip": "List of file extensions to ignore",
-            "hide": True
+            "hide": True,
         },
     }
 
@@ -108,7 +109,10 @@ class GetReferences(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         # Define the function to get all the referenced files in the scene
         def get_referenced_files():
@@ -122,7 +126,9 @@ class GetReferences(CommandBase):
                     continue
                 # If the attribute is a maya/alembic/... reference
                 if cmds.nodeType(attribute) == "reference":
-                    file_path = cmds.referenceQuery(attribute, filename=True, withoutCopyNumber=True)
+                    file_path = cmds.referenceQuery(
+                        attribute, filename=True, withoutCopyNumber=True
+                    )
                     referenced_files.append((attribute, pathlib.Path(file_path)))
                     continue
                 # Otherwise, just get the attribute for simple stuff like file nodes
@@ -131,9 +137,9 @@ class GetReferences(CommandBase):
             return referenced_files
 
         # Execute the get_referenced_files in the main thread
-        referenced_files = await (await Utils.wrapped_execute(
-            action_query, get_referenced_files
-        ))
+        referenced_files = await (
+            await Utils.wrapped_execute(action_query, get_referenced_files)
+        )
 
         # Remove duplicates references
         referenced_files = list(set(referenced_files))
@@ -144,16 +150,23 @@ class GetReferences(CommandBase):
         # Check if the referenced files are reachable and prompt the user if not
         skip_all = False
         for attribute, file_path in referenced_files:
+            # The value might be using a special pattern, we need to use findAllFilesForPattern
+            file_sequence = ftpr.findAllFilesForPattern(str(file_path), None)
+            if len(file_sequence) > 0:
+                file_path = [pathlib.Path(str(file)) for file in file_sequence][0]
+
             # Make sure the file path leads to a reachable file
             skip = False
-            while (not file_path.exists() or not file_path.is_absolute()):
+            while not file_path.exists() or not file_path.is_absolute():
                 if skip_all:
                     skip = True
                     break
                 logger.warning(
                     "Could not reach the file %s at %s", file_path, attribute
                 )
-                file_path, skip, skip_all = await self._prompt_new_path(action_query, file_path, attribute)
+                file_path, skip, skip_all = await self._prompt_new_path(
+                    action_query, file_path, attribute
+                )
                 if skip or file_path is None or skip_all:
                     skip = True
                     break
@@ -193,7 +206,9 @@ class GetReferences(CommandBase):
                 logger.info("Referenced file(s) %s found at %s", sequence, attribute)
 
         # Display a message to the user to inform about all the references to conform
-        current_scene = await Utils.wrapped_execute(action_query, cmds.file, q=True, sn=True)
+        current_scene = await Utils.wrapped_execute(
+            action_query, cmds.file, q=True, sn=True
+        )
         referenced_file_paths = [
             fileseq.findSequencesInList(reference[1])
             if isinstance(reference[1], list)
@@ -229,7 +244,11 @@ class GetReferences(CommandBase):
         new_path_parameter = self.command_buffer.parameters.get("new_path")
         skip_parameter = self.command_buffer.parameters.get("skip")
         skip_all_parameter = self.command_buffer.parameters.get("skip_all")
-        if new_path_parameter is not None and skip_parameter is not None and skip_all_parameter is not None:
+        if (
+            new_path_parameter is not None
+            and skip_parameter is not None
+            and skip_all_parameter is not None
+        ):
             if not skip_all_parameter.hide:
                 skip_parameter.hide = parameters.get("skip_all", True)
                 new_path_parameter.hide = parameters.get("skip_all", True)

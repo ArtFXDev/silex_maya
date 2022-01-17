@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
 import logging
+
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
@@ -59,11 +60,17 @@ class SetReferences(CommandBase):
                 raise Exception("split_attributes is empty.") # this should never happen
 
             base_node = split_attributes[0]
-            aces_attribute = f"{base_node}.colorSpace"
-            aces_value = cmds.getAttr(aces_attribute)
-            
+            aces_attribute = ""
+            aces_value = ""
+            if cmds.attributeQuery("colorSpace", node=attribute, exists=True):
+                aces_attribute = f"{base_node}.colorSpace"
+                aces_value = cmds.getAttr(aces_attribute)
+
+            # file node
             cmds.setAttr(attribute, value, type="string")
-            cmds.setAttr(aces_attribute, aces_value, type="string")
+            if cmds.attributeQuery("colorSpace", node=attribute, exists=True):
+                cmds.setAttr(aces_attribute, aces_value, type="string")
+
             return value
 
         # Execute the function in the main thread

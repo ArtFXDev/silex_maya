@@ -9,7 +9,7 @@ obj:
           path: "silex_maya.commands.export_obj.ExportOBJ"
           ask_user: true
           parameters:
-            file_dir: !command-output "setup:build_output_path:temp_directory"
+            directory: !command-output "setup:build_output_path:temp_directory"
             file_name: !command-output "setup:build_output_path:file_name"
     move:
       label: "Move"

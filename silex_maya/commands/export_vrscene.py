@@ -1,6 +1,7 @@
 from __future__ import annotations
 import typing
 from typing import Any, Dict
+from concurrent.futures import Future
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
@@ -12,7 +13,8 @@ if typing.TYPE_CHECKING:
 
 from silex_maya.utils.utils import Utils
 
-import maya.cmds as cmds
+from maya import cmds
+import gazu.files
 import os
 import pathlib
 import logging
@@ -22,12 +24,12 @@ class ExportVrscene(CommandBase):
     Export selection as v-ray scene
     """
 
-    # set camera list
+    # Set camera list
     cam_list = cmds.listCameras()
     cam_list.append('No camera')
 
     parameters = {
-        "file_dir": {
+        "directory": {
             "label": "File directory",
             "type": pathlib.Path,
             "value": None,
@@ -44,13 +46,14 @@ class ExportVrscene(CommandBase):
         self, action_query: ActionQuery
     ) -> bool:
         """
-        Helper to prompt the user a label
+        Prompt a warning if no selection was found
         """
 
         export_valid: bool =  False
 
-        # check if export is valid
+        # Check if export is valid
         while not export_valid:
+
             # Create a new parameter to prompt label
             info_parameter = ParameterBuffer(
                 type=TextParameterMeta('warning'),
@@ -66,10 +69,11 @@ class ExportVrscene(CommandBase):
             # Prompt the user with a label
             prompt: Dict[str, ANy] = await self.prompt_user(action_query, {"info": info_parameter, 'full_scene': bool_parameter})
 
-            # get selected objects
+            # Get selected objects
             future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
             slection_list = await future
 
+            # valid export
             if len(slection_list) or prompt['full_scene']:
                 export_valid =  True     
         
@@ -83,32 +87,33 @@ class ExportVrscene(CommandBase):
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
 
-        directory: str = str(parameters["file_dir"])
-        file_name: str = str(parameters["file_name"])
+        directory: pathlib.Path = parameters["directory"]
+        file_name: pathlib.Path = parameters["file_name"]
         full_scene: bool = False
-        
-        # Check for extension
-        if "." in file_name:
-            file_name = file_name.split('.')[0]
           
-        export_path: str = f"{directory}{os.path.sep}{file_name}.vrscene"
+        # Create export path
+        extension = await gazu.files.get_output_type_by_name("vrscene")
+        export_path: pathlib.Path = (directory / file_name).with_suffix(f".{extension['short_name']}")
 
-        # Export the selection in vrscene
+        # Create temp directory
         os.makedirs(directory, exist_ok=True)
 
-        future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
+        # Get selection
+        future: Future = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
         slection_list: List[str] = await future
 
+        # Prompt warning if no selection 
         if not len(slection_list):
             full_scene = await self._prompt_warning(action_query)
         
-        # export 
-        await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True, force=True,
-                                    pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
+        # Export vrscene
+        await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True,
+                    pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
 
         if not os.path.exists(export_path):
             raise Exception(
                 f"An error occured while exporting {export_path} to vrscene")
+
         return export_path
     
 
@@ -118,11 +123,15 @@ class ExportVrscene(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+
+        # Warning message
         if 'info' in parameters:
             if parameters.get("full_scene", False):            
-                self.command_buffer.parameters["info"].type = TextParameterMeta('warning')
-                self.command_buffer.parameters["info"].value = "WARNING: No selection detected -> Please selecte somthing or publish full scene"
-            else:
                 self.command_buffer.parameters["info"].type = TextParameterMeta('info')
+                self.command_buffer.parameters["info"].value = "No selection detected -> Please select somthing or publish full scene"
+            else:
+                self.command_buffer.parameters["info"].type = TextParameterMeta('warning')
                 self.command_buffer.parameters["info"].value = 'Select somthing to publish'
+
+        
 
