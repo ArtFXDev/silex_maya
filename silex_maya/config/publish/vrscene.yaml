@@ -16,7 +16,9 @@ vrscene:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: !command-output "check_references:get_references:file_paths"
+            values: 
+              value: !command-output "check_references:get_references:file_paths"
+              hide: true
             actions:
               - "conform"
             categories:
@@ -34,8 +36,12 @@ vrscene:
           path: "silex_maya.commands.set_references.SetReferences"
           tooltip: "Set the new path on the attributes"
           parameters:
-            attributes: !command-output "check_references:get_references:attributes"
-            values: !command-output "check_references:conform_references"
+            attributes: 
+              value: !command-output "check_references:get_references:attributes"
+              hide: true
+            values: 
+              value: !command-output "check_references:conform_references"
+              hide: true
     export:
       label: "Export"
       index: 50
@@ -50,8 +56,12 @@ vrscene:
           label: "Export in vrscene"
           path: "silex_maya.commands.export_vrscene.ExportVrscene"
           parameters:
-            directory: !command-output "setup:build_output_path:temp_directory"
-            file_name: !command-output "setup:build_output_path:file_name"
+            directory: 
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true
+            file_name: 
+              value: !command-output "setup:build_output_path:file_name"
+              hide: true
     move:
       label: "Move"
       index: 60
@@ -60,10 +70,16 @@ vrscene:
           label: "Move"
           path: "silex_client.commands.move.Move"
           parameters:
-            src: !command-output "export:export_vrscene"
-            dst: !command-output "setup:build_output_path:directory"
+            src: 
+              value: !command-output "export:export_vrscene"
+              hide: true
+            dst: 
+              value: !command-output "setup:build_output_path:directory"
+              hide: true
         remove:
           label: "Remove temp directory"
           path: "silex_client.commands.remove.Remove"
           parameters:
-            file_path: !command-output "setup:build_output_path:temp_directory"
+            file_path: 
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true

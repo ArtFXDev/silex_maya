@@ -17,7 +17,9 @@ ma:
           label: "Open scene to conform"
           path: "silex_maya.commands.open.Open"
           parameters:
-            file_path: !command-output "input:input:file_paths"
+            file_path: 
+              value: !command-output "input:input:file_paths"
+              hide: true
             save: True
         cleanup:
           label: "Cleanup scene"
@@ -29,7 +31,9 @@ ma:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: !command-output "conform_references:get_references:file_paths"
+            values: 
+              value: !command-output "conform_references:get_references:file_paths"
+              hide: true
             actions:
               - "conform"
             categories:
@@ -53,7 +57,9 @@ ma:
           path: "silex_client.commands.get_stored_value.GetStoredValue"
           parameters:
             key: "fast_conform_enabled"
-            key_suffix: !command-output "input:input:file_paths"
+            key_suffix: 
+              value: !command-output "input:input:file_paths"
+              hide: true
             default: false
           hide: true
         build_output_path:
@@ -65,12 +71,18 @@ ma:
             fast_conform: !command-output "conform:get_fast_conform_cache:value"
             use_current_context: false
             create_temp_dir: false
-            frame_set: !command-output "input:input:frame_set"
+            frame_set: 
+              value: !command-output "input:input:frame_set"
+              hide: true
             output_type:
               value: "ma"
               hide: true
-            files: !command-output "input:input:file_paths"
-            padding: !command-output "input:input:padding"
+            files: 
+              value: !command-output "input:input:file_paths"
+              hide: true
+            padding: 
+              value: !command-output "input:input:padding"
+              hide: true
           ask_user: true
         set_conform_cache:
           label: "Cache conform location"
@@ -93,8 +105,12 @@ ma:
           path: "silex_maya.commands.set_references.SetReferences"
           tooltip: "Set the new path on the attributes"
           parameters:
-            attributes: !command-output "conform_references:get_references:attributes"
-            values: !command-output "conform_references:conform_references"
+            attributes: 
+              value: !command-output "conform_references:get_references:attributes"
+              hide: true
+            values: 
+              value: !command-output "conform_references:conform_references"
+              hide: true
         
         focus_maya:
           label: "Focus DCC"
@@ -103,7 +119,9 @@ ma:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
           parameters:
-            file_path: !command-output "conform_scene:build_output_path:full_path"
+            file_path: 
+              value: !command-output "conform_scene:build_output_path:full_path"
+              hide: true
         focus_maya:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
@@ -111,7 +129,9 @@ ma:
           label: "Open back the original scene"
           path: "silex_maya.commands.open.Open"
           parameters:
-            file_path: !command-output "conform_references:open:old_path"
+            file_path: 
+              value: !command-output "conform_references:open:old_path"
+              hide: true
             save: False
     output:
       index: 40
