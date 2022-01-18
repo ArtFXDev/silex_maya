@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 from maya import cmds, mel
 from silex_client.action.command_base import CommandBase
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -54,7 +54,7 @@ class CapturePreview(CommandBase):
         logger: logging.Logger,
     ):
         # Take a thumbnail of the current viewport
-        thumbnail_future = await Utils.wrapped_execute(
+        thumbnail_future = await utils.wrapped_execute(
             action_query, self.create_thumbnail
         )
         thumbnail = thumbnail_future.result()

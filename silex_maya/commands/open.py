@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
-import maya.cmds as cmds
+from maya import cmds
 
 
 class Open(CommandBase):
@@ -43,7 +43,7 @@ class Open(CommandBase):
         file_path = parameters["file_path"]
 
         # First get the current file name
-        current_file = await utils.Utils.wrapped_execute(
+        current_file = await utils.utils.wrapped_execute(
             action_query, cmds.file, q=True, sn=True, prompt=False
         )
         current_file = await current_file
@@ -70,6 +70,6 @@ class Open(CommandBase):
 
         # Execute the open function in the main thread
         logger.info("Openning file %s", file_path)
-        await utils.Utils.wrapped_execute(action_query, open, file_path=file_path)
+        await utils.utils.wrapped_execute(action_query, open, file_path=file_path)
 
         return {"old_path": current_file, "new_path": parameters["file_path"]}

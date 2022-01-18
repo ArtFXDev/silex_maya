@@ -7,7 +7,7 @@ from typing import Any, Dict
 from maya import cmds
 
 from silex_client.action.command_base import CommandBase
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -24,7 +24,7 @@ class CreateCube(CommandBase):
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
         # Create the selected node
-        cube_future = await Utils.wrapped_execute(action_query, cmds.polyCube)
+        cube_future = await utils.wrapped_execute(action_query, cmds.polyCube)
         await asyncio.sleep(0.2)
         return await cube_future
 
@@ -33,7 +33,7 @@ class CreateCube(CommandBase):
         self, upstream: Any, parameters: Dict[str, Any], action_query: ActionQuery
     ):
         # Create the selected node
-        await Utils.wrapped_execute(
+        await utils.wrapped_execute(
             action_query, cmds.delete, self.command_buffer.output_result[0]
         )
         await asyncio.sleep(0.2)

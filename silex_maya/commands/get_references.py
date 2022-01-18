@@ -10,7 +10,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
 from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -138,7 +138,7 @@ class GetReferences(CommandBase):
 
         # Execute the get_referenced_files in the main thread
         referenced_files = await (
-            await Utils.wrapped_execute(action_query, get_referenced_files)
+            await utils.wrapped_execute(action_query, get_referenced_files)
         )
 
         # Remove duplicates references
@@ -185,7 +185,7 @@ class GetReferences(CommandBase):
 
             sequence = None
             # Test in the main thread if the current attribute might point to a sequence
-            is_possible_sequence = await Utils.wrapped_execute(
+            is_possible_sequence = await utils.wrapped_execute(
                 action_query, self._test_possible_sequence, attribute
             )
             if await is_possible_sequence:
@@ -206,7 +206,7 @@ class GetReferences(CommandBase):
                 logger.info("Referenced file(s) %s found at %s", sequence, attribute)
 
         # Display a message to the user to inform about all the references to conform
-        current_scene = await Utils.wrapped_execute(
+        current_scene = await utils.wrapped_execute(
             action_query, cmds.file, q=True, sn=True
         )
         referenced_file_paths = [
