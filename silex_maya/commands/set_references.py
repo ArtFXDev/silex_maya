@@ -1,5 +1,5 @@
 from __future__ import annotations
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 import typing
 from typing import Any, Dict, List
 
@@ -11,7 +11,7 @@ import logging
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import maya.cmds as cmds
+from maya import cmds
 
 
 class SetReferences(CommandBase):
@@ -79,7 +79,7 @@ class SetReferences(CommandBase):
             if isinstance(value, list):
                 value = value[-1]
 
-            new_value = await Utils.wrapped_execute(
+            new_value = await utils.wrapped_execute(
                 action_query, set_reference, attribute, value
             )
             logger.info("Attribute %s set to %s", attribute, value)

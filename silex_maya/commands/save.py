@@ -2,7 +2,7 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 from silex_client.action.command_base import CommandBase
 import logging
 
@@ -39,6 +39,6 @@ class Save(CommandBase):
 
         logger.info("Saving scene to %s", file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        await Utils.wrapped_execute(action_query, save, file_path=file_path)
+        await utils.wrapped_execute(action_query, save, file_path=file_path)
 
         return {"new_path": file_path}

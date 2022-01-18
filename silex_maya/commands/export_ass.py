@@ -9,7 +9,7 @@ from silex_client.utils.parameter_types import SelectParameterMeta
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 from maya import cmds
 import gazu.files
@@ -110,11 +110,11 @@ class ExportAss(CommandBase):
     def format_to_4_digits(self, frame: int) -> str:
         """Format frame number to 4 digits"""
 
-        frame = str(frame)
-        for i in range(4 - len(frame)):
-            frame = "0" + frame
+        frame4: str = str(frame)
+        while len(frame4) < 4:
+            frame4 += "0" + frame4
         
-        return frame
+        return frame4
 
     def export_sequence(self, path: pathlib.Path, extension: str, frame_range: List[int], cam: str, sel: List[str], Llinks: bool, Slinks: bool, Bbox: bool, binary: str, mask: int) -> List[str]:
         """Export ass for each frame"""
@@ -177,7 +177,7 @@ class ExportAss(CommandBase):
         os.makedirs(directory, exist_ok=True)
         frame_list: List[int] = list(FrameSet(frame_range))
         extension: str = await gazu.files.get_output_type_by_name("ass")
-        exported_ass: Future = await Utils.wrapped_execute(action_query, self.export_sequence, export_path_without_extention, extension['short_name'], frame_list, cam, sel, Llinks, Slinks, Bbox, binary, mask)
+        exported_ass: Future = await utils.wrapped_execute(action_query, self.export_sequence, export_path_without_extention, extension['short_name'], frame_list, cam, sel, Llinks, Slinks, Bbox, binary, mask)
         exported_ass: List[str] = await exported_ass
 
         # look form missing ass
@@ -201,7 +201,7 @@ class ExportAss(CommandBase):
     ):
 
         # Add existing cameras to the parameters list
-        cam_list = await Utils.wrapped_execute(action_query, cmds.listCameras)
+        cam_list = await utils.wrapped_execute(action_query, cmds.listCameras)
         cam_list = cam_list.result()
         cam_list.append('No camera')
       

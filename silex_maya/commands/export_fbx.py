@@ -11,7 +11,7 @@ from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParame
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 from maya import cmds
 import gazu.files
@@ -108,12 +108,12 @@ class ExportFBX(CommandBase):
         end_frame: int = parameters["frame_range"][1]
 
         # Get selected object
-        selected: Future = await Utils.wrapped_execute(action_query, self.selected_objects)
+        selected: Future = await utils.wrapped_execute(action_query, self.selected_objects)
         selected: List[str] = await selected
         
         while len(selected) == 0:
             await self._prompt_info_parameter(action_query, "Could not export the selection: No selection detected")
-            selected = await Utils.wrapped_execute(action_query, self.selected_objects)
+            selected = await utils.wrapped_execute(action_query, self.selected_objects)
         
         # create temps directory
         os.makedirs(directory, exist_ok=True)
@@ -124,7 +124,7 @@ class ExportFBX(CommandBase):
         export_path = export_path.with_suffix(f".{extension['short_name']}")
 
         # Export obj to fbx
-        await Utils.wrapped_execute(action_query, self.export_fbx, export_path, selected, used_timeline, start_frame, end_frame)
+        await utils.wrapped_execute(action_query, self.export_fbx, export_path, selected, used_timeline, start_frame, end_frame)
 
         return export_path
 
