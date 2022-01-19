@@ -18,7 +18,6 @@ import gazu.files
 import os
 import pathlib
 import gazu
-import fileseq
 import logging
 
 class ExportFBX(CommandBase):

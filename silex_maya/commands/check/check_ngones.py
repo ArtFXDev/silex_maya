@@ -6,7 +6,7 @@ from typing import Any, Dict
 from maya import cmds
 
 from silex_client.action.command_base import CommandBase
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -43,4 +43,4 @@ class CheckNgones(CommandBase):
 
                 raise Exception(f"{sel_size} N-gones found")
 
-        await Utils.wrapped_execute(action_query, lambda: check_ngons())
+        await utils.wrapped_execute(action_query, lambda: check_ngons())
