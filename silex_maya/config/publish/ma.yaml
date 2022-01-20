@@ -4,14 +4,12 @@ ma:
       label: "Check references"
       index: 30
       commands:
+        cleanup:
+          label: "Cleanup scene"
+          path: "silex_maya.commands.cleanup_scene.CleanupScene"
         get_references:
           label: "Get referenced files"
           path: "silex_maya.commands.get_references.GetReferences"
-          parameters:
-            filters:
-              - ".obj"
-              - ".fbx"
-              - ".abc"
         conform_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
@@ -28,7 +26,7 @@ ma:
             output: "setup:append_conform_actions"
 
     conform_references:
-      label: "Check references"
+      label: "Repath references"
       index: 40
       commands:
         repath_attributes:
