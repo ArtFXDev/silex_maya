@@ -7,20 +7,79 @@ ma:
         input:
           path: "silex_client.commands.pass.Pass"
 
+    get_output_location:
+      label: "Get output location"
+      index: 20
+      commands:
+        get_conform_cache:
+          label: "Get previous conform location"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+          hide: true
+        get_fast_conform_cache:
+          label: "Check fast conform"
+          path: "silex_client.commands.get_stored_value.GetStoredValue"
+          parameters:
+            key: "fast_conform_enabled"
+            key_suffix: 
+              value: !command-output "input:input:file_paths"
+              hide: true
+            default: false
+          hide: true
+        build_output_path:
+          label: "Build output path"
+          path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
+          tooltip: "Build the complete output path"
+          parameters:
+            task: !command-output "get_output_location:get_conform_cache:value"
+            fast_conform: !command-output "get_output_location:get_fast_conform_cache:value"
+            use_current_context: false
+            create_temp_dir: false
+            frame_set: 
+              value: !command-output "input:input:frame_set"
+              hide: true
+            output_type:
+              value: "ma"
+              hide: true
+            files: 
+              value: !command-output "input:input:file_paths"
+              hide: true
+            padding: 
+              value: !command-output "input:input:padding"
+              hide: true
+          ask_user: true
+        set_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "build_output_path_task_id"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "get_output_location:build_output_path:task"
+          hide: true
+        set_fast_conform_cache:
+          label: "Cache conform location"
+          path: "silex_client.commands.set_stored_value.SetStoredValue"
+          parameters:
+            key: "fast_conform_enabled"
+            key_suffix: !command-output "input:input:file_paths"
+            value: !command-output "get_output_location:build_output_path:fast_conform"
+          hide: true
+
     conform_references:
       label: "Conform Maya scene's references"
-      index: 20
+      index: 30
       commands:
         focus_maya:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         open:
           label: "Open scene to conform"
-          path: "silex_maya.commands.open.Open"
+          path: "silex_maya.commands.open_conform.OpenConform"
           parameters:
-            file_path: 
-              value: !command-output "input:input:file_paths"
-              hide: true
+            conform_path: !command-output "get_output_location:build_output_path:full_path"
+            file_path: !command-output "input:input:file_paths"
             save: True
         cleanup:
           label: "Cleanup scene"
@@ -45,63 +104,8 @@ ma:
 
     conform_scene:
       label: "Conform Maya scene"
-      index: 30
+      index: 40
       commands:
-        get_conform_cache:
-          label: "Get previous conform location"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
-          hide: true
-        get_fast_conform_cache:
-          label: "Check fast conform"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "fast_conform_enabled"
-            key_suffix: 
-              value: !command-output "input:input:file_paths"
-              hide: true
-            default: false
-          hide: true
-        build_output_path:
-          label: "Build output path"
-          path: "silex_client.commands.build_output_path_conform.BuildOutputPathConform"
-          tooltip: "Build the complete output path"
-          parameters:
-            task: !command-output "conform_scene:get_conform_cache:value"
-            fast_conform: !command-output "conform_scene:get_fast_conform_cache:value"
-            use_current_context: false
-            create_temp_dir: false
-            frame_set: 
-              value: !command-output "input:input:frame_set"
-              hide: true
-            output_type:
-              value: "ma"
-              hide: true
-            files: 
-              value: !command-output "input:input:file_paths"
-              hide: true
-            padding: 
-              value: !command-output "input:input:padding"
-              hide: true
-          ask_user: true
-        set_conform_cache:
-          label: "Cache conform location"
-          path: "silex_client.commands.set_stored_value.SetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
-            value: !command-output "conform_scene:build_output_path:task"
-          hide: true
-        set_fast_conform_cache:
-          label: "Cache conform location"
-          path: "silex_client.commands.set_stored_value.SetStoredValue"
-          parameters:
-            key: "fast_conform_enabled"
-            key_suffix: !command-output "input:input:file_paths"
-            value: !command-output "conform_scene:build_output_path:fast_conform"
-          hide: true
         repath_attributes:
           label: "Repath attributes"
           path: "silex_maya.commands.set_references.SetReferences"
@@ -113,16 +117,12 @@ ma:
             values: 
               value: !command-output "conform_references:conform_references"
               hide: true
-        
-        focus_maya:
-          label: "Focus DCC"
-          path: "silex_client.commands.focus.Focus"
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
           parameters:
             file_path: 
-              value: !command-output "conform_scene:build_output_path:full_path"
+              value: !command-output "get_output_location:build_output_path:full_path"
               hide: true
         focus_maya:
           label: "Focus DCC"
