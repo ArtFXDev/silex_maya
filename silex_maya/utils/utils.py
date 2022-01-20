@@ -3,48 +3,47 @@ from maya import utils, cmds
 from typing import Callable
 from silex_client.utils.log import logger
 from silex_client.core.context import Context
+
 from concurrent import futures
 import threading
 
 
-class Utils:
-    @staticmethod
-    async def wrapped_execute(action_query, maya_function: Callable, *args, **kwargs):
+async def wrapped_execute(action_query, maya_function: Callable, *args, **kwargs):
 
-        future = action_query.event_loop.loop.create_future()
+    future = action_query.event_loop.loop.create_future()
 
-        def wrapped_function():
-            async def set_future_result(result):
-                future.set_result(result)
+    def wrapped_function():
+        async def set_future_result(result):
+            future.set_result(result)
 
-            async def set_future_exception(exception):
-                future.set_exception(exception)
+        async def set_future_exception(exception):
+            future.set_exception(exception)
 
-            try:
-                result = maya_function(*args, **kwargs)
-                Context.get().event_loop.register_task(set_future_result(result))
-            except Exception as ex:
-                Context.get().event_loop.register_task(set_future_exception(ex))
+        try:
+            result = maya_function(*args, **kwargs)
+            Context.get().event_loop.register_task(set_future_result(result))
+        except Exception as ex:
+            Context.get().event_loop.register_task(set_future_exception(ex))
 
-        # This maya function execute the given function in the main thread
-        if not cmds.about(batch=True):
-            utils.executeDeferred(wrapped_function)
-        else:
-            thread = threading.Thread(target=wrapped_function, daemon=True)
-            thread.start()
+    # This maya function execute the given function in the main thread
+    if not cmds.about(batch=True):
+        utils.executeDeferred(wrapped_function)
+    else:
+        thread = threading.Thread(target=wrapped_function, daemon=True)
+        thread.start()
 
-        def callback(task_result: futures.Future):
-            if task_result.cancelled():
-                return
+    def callback(task_result: futures.Future):
+        if task_result.cancelled():
+            return
 
-            exception = task_result.exception()
-            if exception:
-                logger.error("Exception raised in wrapped execute call: %s", exception)
-                raise Exception(
-                    f"Exception raised in wrapped execute call: {exception}"
-                )
+        exception = task_result.exception()
+        if exception:
+            logger.error("Exception raised in wrapped execute call: %s", exception)
+            raise Exception(
+                f"Exception raised in wrapped execute call: {exception}"
+            )
 
-        future.add_done_callback(callback)
-        await asyncio.wait_for(future, None)
-        return future
-      
+    future.add_done_callback(callback)
+    await asyncio.wait_for(future, None)
+    return future
+

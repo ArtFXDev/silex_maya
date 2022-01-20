@@ -5,7 +5,7 @@ import logging
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -34,4 +34,4 @@ class CleanupScene(CommandBase):
                 cmds.lockNode(unknown_node, lock=False)
                 cmds.delete(unknown_node)
 
-        await Utils.wrapped_execute(action_query, cleanup)
+        await utils.wrapped_execute(action_query, cleanup)

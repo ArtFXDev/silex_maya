@@ -4,7 +4,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
 
@@ -78,7 +78,7 @@ class ExportOBJ(CommandBase):
         authorized_types = ["mesh", "transform"]    
 
         # Get selection
-        selected = await Utils.wrapped_execute(action_query, lambda: self.selected_objects())
+        selected = await utils.wrapped_execute(action_query, lambda: self.selected_objects())
         selected = await selected
 
         # Exclude unauthorized types    
@@ -87,7 +87,7 @@ class ExportOBJ(CommandBase):
         while len(selected) != 1:
             await self._prompt_info_parameter(action_query, "Could not export the selection: Select only one mesh component.")
             # Get selection
-            selected = await Utils.wrapped_execute(action_query, lambda: self.selected_objects())
+            selected = await utils.wrapped_execute(action_query, lambda: self.selected_objects())
             selected = await selected 
 
             # Exclude unauthorized types 
@@ -102,6 +102,6 @@ class ExportOBJ(CommandBase):
         export_path = export_path.with_suffix(f".{extension['short_name']}")
 
         # Export in OBJ
-        await Utils.wrapped_execute(action_query, cmds.file, export_path, exportSelected=True, pr=True, type="OBJexport")
+        await utils.wrapped_execute(action_query, cmds.file, export_path, exportSelected=True, pr=True, type="OBJexport")
 
         return str(export_path)

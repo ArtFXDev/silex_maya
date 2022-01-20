@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 from concurrent.futures import Future
 
 from silex_client.action.command_base import CommandBase
@@ -11,7 +11,7 @@ from silex_client.utils.parameter_types import TextParameterMeta
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 from maya import cmds
 import gazu.files
@@ -67,10 +67,10 @@ class ExportVrscene(CommandBase):
                 value=True
             )
             # Prompt the user with a label
-            prompt: Dict[str, ANy] = await self.prompt_user(action_query, {"info": info_parameter, 'full_scene': bool_parameter})
+            prompt: Dict[str, Any] = await self.prompt_user(action_query, {"info": info_parameter, 'full_scene': bool_parameter})
 
             # Get selected objects
-            future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
+            future: Any = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
             slection_list = await future
 
             # valid export
@@ -79,9 +79,6 @@ class ExportVrscene(CommandBase):
         
                 return prompt['full_scene']
             
-       
-
-
     @ CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
@@ -99,15 +96,15 @@ class ExportVrscene(CommandBase):
         os.makedirs(directory, exist_ok=True)
 
         # Get selection
-        future: Future = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
-        slection_list: List[str] = await future
+        future: Future = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
+        slection_list: List[str] = future.result()
 
         # Prompt warning if no selection 
         if not len(slection_list):
             full_scene = await self._prompt_warning(action_query)
         
         # Export vrscene
-        await Utils.wrapped_execute(action_query, cmds.file, export_path, options=True,
+        await utils.wrapped_execute(action_query, cmds.file, export_path, options=True,
                     pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
 
         if not os.path.exists(export_path):
