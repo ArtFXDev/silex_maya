@@ -19,7 +19,7 @@ vrscene:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: 
+            values:
               value: !command-output "check_references:get_references:file_paths"
               hide: true
             actions:
@@ -39,10 +39,10 @@ vrscene:
           path: "silex_maya.commands.set_references.SetReferences"
           tooltip: "Set the new path on the attributes"
           parameters:
-            attributes: 
+            attributes:
               value: !command-output "check_references:get_references:attributes"
               hide: true
-            values: 
+            values:
               value: !command-output "check_references:conform_references"
               hide: true
     export:
@@ -58,11 +58,12 @@ vrscene:
         export_vrscene:
           label: "Export in vrscene"
           path: "silex_maya.commands.export_vrscene.ExportVrscene"
+          ask_user: true
           parameters:
-            directory: 
+            directory:
               value: !command-output "setup:build_output_path:temp_directory"
               hide: true
-            file_name: 
+            file_name:
               value: !command-output "setup:build_output_path:file_name"
               hide: true
     move:
@@ -73,16 +74,16 @@ vrscene:
           label: "Move"
           path: "silex_client.commands.move.Move"
           parameters:
-            src: 
+            src:
               value: !command-output "export:export_vrscene"
               hide: true
-            dst: 
+            dst:
               value: !command-output "setup:build_output_path:directory"
               hide: true
         remove:
           label: "Remove temp directory"
           path: "silex_client.commands.remove.Remove"
           parameters:
-            file_path: 
+            file_path:
               value: !command-output "setup:build_output_path:temp_directory"
               hide: true
