@@ -104,8 +104,6 @@ class ExportMa(CommandBase):
             typ="mayaAscii",
         )
 
-        if not os.path.exists(export_path):
-            raise Exception(f"An error occured while exporting {export_path} to ma")
         return export_path
 
     async def setup(
