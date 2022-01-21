@@ -4,7 +4,7 @@ from maya import cmds
 from typing import List
 
 
-def rename_duplicates_nodes() -> List[str]:
+def rename_duplicates_nodes(node_filters: List[re.Pattern]) -> List[str]:
     """
     In some cases, having two nodes with the same name makes
     """
@@ -18,6 +18,10 @@ def rename_duplicates_nodes() -> List[str]:
         return []
 
     for name in duplicates:
+        # Skip the name does not match any of the regex skip it
+        if not any(regex.search(name) for regex in node_filters):
+            continue
+
         # Extract the base name
         m = re.compile("[^|]*$").search(name)
         if m is None:
