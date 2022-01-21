@@ -76,8 +76,8 @@ class ExportABC(CommandBase):
         # Get the output path and range variable
         directory: pathlib.Path = parameters["directory"] # Directory is temp directory
         file_name: pathlib.Path = parameters["file_name"]
-        start_frame: pathlib.Path = parameters["frame_range"][0]
-        end_frame: pathlib.Path = parameters["frame_range"][1]
+        start_frame: int = parameters["frame_range"][0]
+        end_frame: int = parameters["frame_range"][1]
         is_timeline: bool = parameters["timeline_as_framerange"]
 
         # List of path to return

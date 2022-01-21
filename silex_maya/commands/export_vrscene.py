@@ -1,11 +1,12 @@
 from __future__ import annotations
 import typing
 from typing import Any, Dict, List
-from concurrent.futures import Future
 
 from silex_client.action.command_base import CommandBase
-from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import TextParameterMeta
+from silex_client.utils.command import CommandBuilder
+from silex_client.utils.parameter_types import TextParameterMeta, MultipleSelectParameterMeta
+from silex_maya.utils import thread as thread_maya 
+from silex_client.utils import thread as thread_client
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -16,6 +17,7 @@ from silex_maya.utils import utils
 from maya import cmds
 import gazu.files
 import os
+import subprocess
 import pathlib
 import logging
 
@@ -24,61 +26,26 @@ class ExportVrscene(CommandBase):
     Export selection as v-ray scene
     """
 
-    # Set camera list
-    cam_list = cmds.listCameras()
-    cam_list.append('No camera')
-
     parameters = {
         "directory": {
             "label": "File directory",
             "type": pathlib.Path,
             "value": None,
+            "hide": True
         },
         "file_name": {
             "label": "File name",
             "type": pathlib.Path,
             "value": None,
+            "hide": True
+        },
+        "render_layers": {
+            "label": "Select render layers",
+            "type": MultipleSelectParameterMeta,
+            "value": ['defaultRenderLayer'],
         },
     }
-
-
-    async def _prompt_warning(
-        self, action_query: ActionQuery
-    ) -> bool:
-        """
-        Prompt a warning if no selection was found
-        """
-
-        export_valid: bool =  False
-
-        # Check if export is valid
-        while not export_valid:
-
-            # Create a new parameter to prompt label
-            info_parameter = ParameterBuffer(
-                type=TextParameterMeta('warning'),
-                name="Info",
-                label="Info",
-            )
-            bool_parameter = ParameterBuffer(
-                type=bool,
-                name="full_scene",
-                label='Publish full scene',
-                value=True
-            )
-            # Prompt the user with a label
-            prompt: Dict[str, Any] = await self.prompt_user(action_query, {"info": info_parameter, 'full_scene': bool_parameter})
-
-            # Get selected objects
-            future: Any = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
-            slection_list = await future
-
-            # valid export
-            if len(slection_list) or prompt['full_scene']:
-                export_valid =  True     
-        
-                return prompt['full_scene']
-            
+           
     @ CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
@@ -86,32 +53,41 @@ class ExportVrscene(CommandBase):
 
         directory: pathlib.Path = parameters["directory"]
         file_name: pathlib.Path = parameters["file_name"]
-        full_scene: bool = False
-          
-        # Create export path
+        render_layers: List[str]= parameters["render_layers"]
         extension = await gazu.files.get_output_type_by_name("vrscene")
-        export_path: pathlib.Path = (directory / file_name).with_suffix(f".{extension['short_name']}")
-
-        # Create temp directory
+        
+        # Create temporary directory
         os.makedirs(directory, exist_ok=True)
 
-        # Get selection
-        future: Future = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
-        slection_list: List[str] = future.result()
+        # Batch: Export vrscene for each render layer
+        output_files: List[pathlib.Path] = list()
+        command_label = self.command_buffer.label
 
-        # Prompt warning if no selection 
-        if not len(slection_list):
-            full_scene = await self._prompt_warning(action_query)
-        
-        # Export vrscene
-        await utils.wrapped_execute(action_query, cmds.file, export_path, options=True,
-                    pr=True, ea=full_scene, es=not(full_scene), typ="V-Ray Scene")
+        for index, layer in enumerate(render_layers):
+            new_label = f"{command_label}: ({index + 1}/{len(render_layers)})"
+            self.command_buffer.label = new_label
+            await action_query.async_update_websocket(apply_response=False)
+            
+            output_name: pathlib.Path = pathlib.Path(f'{file_name}_{layer}')
+            output_path: pathlib.Path = (directory / output_name).with_suffix(f".{extension['short_name']}")
 
-        if not os.path.exists(export_path):
-            raise Exception(
-                f"An error occured while exporting {export_path} to vrscene")
+            render_scene: str = await thread_maya.execute_in_main_thread(cmds.file, q=True, sn=True)
 
-        return export_path
+            batch_cmd = (
+                CommandBuilder("C:/Maya2022/Maya2022/bin/Render.exe", delimiter=None)
+                .param("r", "vray")
+                .param("rl", layer)
+                .param("exportFileName", str(output_path))
+                .param("noRender")
+            )
+
+            batch_cmd.set_last_param(render_scene)
+
+            await thread_client.execute_in_thread(subprocess.call, batch_cmd.as_argv(), shell=True)
+            
+            output_files.append(output_path)
+
+        return output_files
     
 
     async def setup(
@@ -129,6 +105,9 @@ class ExportVrscene(CommandBase):
             else:
                 self.command_buffer.parameters["info"].type = TextParameterMeta('warning')
                 self.command_buffer.parameters["info"].value = 'Select somthing to publish'
+
+        render_layers: List[str] = await thread_maya.execute_in_main_thread(cmds.ls, typ='renderLayer')
+        self.command_buffer.parameters["render_layers"].type = MultipleSelectParameterMeta(*render_layers)
 
         
 

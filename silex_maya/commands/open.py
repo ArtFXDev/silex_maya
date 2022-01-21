@@ -54,7 +54,7 @@ class Open(CommandBase):
             return {"old_path": current_file, "new_path": current_file}
 
         # Define the function that will open the scene
-        def open(file_path: str):
+        def open(file_path: str, force: bool = False):
             # Check if there is some modifications to save
             file_state = cmds.file(q=True, modified=True)
             current_file = cmds.file(q=True, sn=True)
@@ -65,8 +65,10 @@ class Open(CommandBase):
             # Save the current scene before openning a new one
             if file_state and current_file and parameters["save"]:
                 cmds.file(save=True)
-
-            cmds.file(file_path, o=True)
+            # If the scene has unsaved changes we must force the open
+            elif file_state:
+                force = True
+            cmds.file(file_path, o=True, force=force)
 
         # Execute the open function in the main thread
         logger.info("Openning file %s", file_path)
