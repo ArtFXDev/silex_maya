@@ -39,7 +39,11 @@ class ExportABC(CommandBase):
             "label": "Frame Range",
             "type": IntArrayParameterMeta(2),
             "value": [0, 0]
-        }
+        },
+        "write_visibility": { "label": "Write Visibility", "type": bool, "value": False },
+        "world_space": { "label": "World Space", "type": bool, "value": False },
+        "uv_write": { "label": "UV Write", "type": bool, "value": False },
+        "write_creases": { "label": "Write Creases", "type": bool, "value": False },
     }
 
             
@@ -53,8 +57,8 @@ class ExportABC(CommandBase):
         return selected
 
     # Export abc method for wrapped execute
-    def export_abc(self, start: int, end: int, path: str, obj) -> None:
-        """Export in alambic"""
+    def export_abc(self, start: int, end: int, path: str, obj, write_visibility: bool, world_space: bool, uv_write: bool, write_creases: bool) -> None:
+        """Export in alembic"""
         
         # Authorized type
         authorized_type = ["transform", "mesh", "camera"]
@@ -65,8 +69,10 @@ class ExportABC(CommandBase):
             # Check selected root
             if obj is None:
                 raise Exception("ERROR: No root found")
-
-            cmds.AbcExport(j=f"-uvWrite -dataFormat ogawa -root {obj} -frameRange {start} {end} -file {path}")
+            cmd = f"-dataFormat ogawa {'-uv' if uv_write else ''}"
+            cmd.join(f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''}")
+            cmd.join(f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}")
+            cmds.AbcExport(j=cmd)
 
 
     @CommandBase.conform_command()
@@ -79,6 +85,10 @@ class ExportABC(CommandBase):
         start_frame: int = parameters["frame_range"][0]
         end_frame: int = parameters["frame_range"][1]
         is_timeline: bool = parameters["timeline_as_framerange"]
+        write_visibility: bool = parameters["write_visibility"]
+        world_space: bool = parameters["world_space"]
+        uv_write: bool = parameters["uv_write"]
+        write_creases: bool = parameters["write_creases"]
 
         # List of path to return
         to_return_paths = []
@@ -107,7 +117,16 @@ class ExportABC(CommandBase):
             
             # Export in alambic
             await utils.wrapped_execute(
-                action_query, self.export_abc, start_frame, end_frame, export_path, name
+                action_query,
+                self.export_abc,
+                start_frame,
+                end_frame,
+                export_path,
+                name,
+                write_visibility,
+                world_space,
+                uv_write,
+                write_creases,
             )
             
         return to_return_paths
