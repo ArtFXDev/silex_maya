@@ -70,8 +70,8 @@ class ExportABC(CommandBase):
             if obj is None:
                 raise Exception("ERROR: No root found")
             cmd = f"-dataFormat ogawa {'-uv' if uv_write else ''}"
-            cmd = f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''}"
-            cmd = f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}"
+            cmd.join(f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''}")
+            cmd.join(f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}")
             cmds.AbcExport(j=cmd)
 
 
