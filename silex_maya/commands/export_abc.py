@@ -11,7 +11,7 @@ from silex_client.utils.parameter_types import IntArrayParameterMeta
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 from maya import cmds
 import gazu.files
@@ -76,15 +76,15 @@ class ExportABC(CommandBase):
         # Get the output path and range variable
         directory: pathlib.Path = parameters["directory"] # Directory is temp directory
         file_name: pathlib.Path = parameters["file_name"]
-        start_frame: pathlib.Path = parameters["frame_range"][0]
-        end_frame: pathlib.Path = parameters["frame_range"][1]
+        start_frame: int = parameters["frame_range"][0]
+        end_frame: int = parameters["frame_range"][1]
         is_timeline: bool = parameters["timeline_as_framerange"]
 
         # List of path to return
         to_return_paths = []
         
         # Get selected objects
-        selected = await Utils.wrapped_execute(action_query, self.select_objects)
+        selected = await utils.wrapped_execute(action_query, self.select_objects)
         selected = await selected
 
         # Set frame range
@@ -106,7 +106,7 @@ class ExportABC(CommandBase):
             to_return_paths.append(str(export_path))
             
             # Export in alambic
-            await Utils.wrapped_execute(
+            await utils.wrapped_execute(
                 action_query, self.export_abc, start_frame, end_frame, export_path, name
             )
             

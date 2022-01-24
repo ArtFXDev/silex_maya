@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
-import maya.cmds as cmds
+from maya import cmds
 
 
 class Open(CommandBase):
@@ -43,7 +43,7 @@ class Open(CommandBase):
         file_path = parameters["file_path"]
 
         # First get the current file name
-        current_file = await utils.Utils.wrapped_execute(
+        current_file = await utils.wrapped_execute(
             action_query, cmds.file, q=True, sn=True, prompt=False
         )
         current_file = await current_file
@@ -54,7 +54,7 @@ class Open(CommandBase):
             return {"old_path": current_file, "new_path": current_file}
 
         # Define the function that will open the scene
-        def open(file_path: str):
+        def open(file_path: str, force: bool = False):
             # Check if there is some modifications to save
             file_state = cmds.file(q=True, modified=True)
             current_file = cmds.file(q=True, sn=True)
@@ -65,11 +65,13 @@ class Open(CommandBase):
             # Save the current scene before openning a new one
             if file_state and current_file and parameters["save"]:
                 cmds.file(save=True)
-
-            cmds.file(file_path, o=True)
+            # If the scene has unsaved changes we must force the open
+            elif file_state:
+                force = True
+            cmds.file(file_path, o=True, force=force)
 
         # Execute the open function in the main thread
         logger.info("Openning file %s", file_path)
-        await utils.Utils.wrapped_execute(action_query, open, file_path=file_path)
+        await utils.wrapped_execute(action_query, open, file_path=file_path)
 
         return {"old_path": current_file, "new_path": parameters["file_path"]}

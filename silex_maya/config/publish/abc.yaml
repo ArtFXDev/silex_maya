@@ -9,8 +9,12 @@ abc:
           path: "silex_maya.commands.export_abc.ExportABC"
           ask_user: true
           parameters:
-            directory: !command-output "setup:build_output_path:temp_directory"
-            file_name: !command-output "setup:build_output_path:file_name"
+            directory: 
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true
+            file_name: 
+              value: !command-output "setup:build_output_path:file_name"
+              hide: true
 
     move:
       label: "Move"
@@ -20,10 +24,16 @@ abc:
           label: "Move"
           path: "silex_client.commands.move.Move"
           parameters:
-            src: !command-output "export:export_abc"
-            dst: !command-output "setup:build_output_path:directory"
+            src: 
+              value: !command-output "export:export_abc"
+              hide: true
+            dst: 
+              value: !command-output "setup:build_output_path:directory"
+              hide: true
         remove:
           label: "Remove temp directory"
           path: "silex_client.commands.remove.Remove"
           parameters:
-            file_path: !command-output "setup:build_output_path:temp_directory"
+            file_path: 
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true

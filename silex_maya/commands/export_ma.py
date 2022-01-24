@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
-from silex_maya.utils.utils import Utils
+from silex_maya.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -63,7 +63,7 @@ class ExportMa(CommandBase):
             )
 
             # Get selected objects
-            future: Any = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
+            future: Any = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
             slection_list = await future
 
             if len(slection_list) or prompt["full_scene"]:
@@ -85,8 +85,8 @@ class ExportMa(CommandBase):
         export_path: pathlib.Path = (directory / file_name).with_suffix(f".{extension['short_name']}")
 
         # Export the selection in ma
-        future: Future = await Utils.wrapped_execute(action_query, cmds.ls, sl=1)
-        slection_list: List[str] = await future
+        future: Future = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
+        slection_list: List[str] = future.result()
 
         # Prompt warning
         if not len(slection_list):
@@ -94,7 +94,7 @@ class ExportMa(CommandBase):
 
         # Export in temps directory
         os.makedirs(directory, exist_ok=True)
-        await Utils.wrapped_execute(
+        await utils.wrapped_execute(
             action_query,
             cmds.file,
             export_path,
@@ -104,8 +104,6 @@ class ExportMa(CommandBase):
             typ="mayaAscii",
         )
 
-        if not os.path.exists(export_path):
-            raise Exception(f"An error occured while exporting {export_path} to ma")
         return export_path
 
     async def setup(
