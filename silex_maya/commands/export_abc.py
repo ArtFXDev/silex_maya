@@ -5,6 +5,7 @@ import logging
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.command import CommandBuilder
 
 
 # Forward references
@@ -57,7 +58,7 @@ class ExportABC(CommandBase):
         return selected
 
     # Export abc method for wrapped execute
-    def export_abc(self, start: int, end: int, path: str, obj, write_visibility: bool, world_space: bool, uv_write: bool, write_creases: bool) -> None:
+    def export_abc(self, start: int, end: int, path: str, obj, write_visibility: bool, world_space: bool, uv_write: bool, write_creases: bool, logger) -> None:
         """Export in alembic"""
         
         # Authorized type
@@ -69,11 +70,12 @@ class ExportABC(CommandBase):
             # Check selected root
             if obj is None:
                 raise Exception("ERROR: No root found")
-            cmd = f"-dataFormat ogawa {'-uv' if uv_write else ''}"
-            cmd.join(f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''}")
-            cmd.join(f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}")
+            cmd = f"-dataFormat ogawa {'-uv' if uv_write else ''} "\
+            f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''} "\
+            f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}"
+            logger.info(cmd)
             cmds.AbcExport(j=cmd)
-
+            logger.info(cmd)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -111,7 +113,7 @@ class ExportABC(CommandBase):
             name: str = obj.split("|")[-1]
             extension: str = await gazu.files.get_output_type_by_name('abc')
             export_path: pathlib.Path = (directory / f"{file_name}_{name}").with_suffix(f".{extension['short_name']}")
-
+            logger.info(name)
             # Add path to return list
             to_return_paths.append(str(export_path))
             
@@ -127,6 +129,7 @@ class ExportABC(CommandBase):
                 world_space,
                 uv_write,
                 write_creases,
+                logger
             )
             
         return to_return_paths
