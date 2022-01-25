@@ -27,10 +27,10 @@ ass:
             dst:
               value: !command-output "setup:build_output_path:directory"
               hide: true
-        # remove:
-        #   label: "Remove temp directory"
-        #   path: "silex_client.commands.remove.Remove"
-        #   parameters:
-        #     file_path:
-        #       value: !command-output "setup:build_output_path:temp_directory"
-        #       hide: true
+        remove:
+          label: "Remove temp directory"
+          path: "silex_client.commands.remove.Remove"
+          parameters:
+            file_path:
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true
