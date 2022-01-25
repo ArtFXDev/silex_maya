@@ -1,11 +1,8 @@
 from __future__ import annotations
-from sys import path_importer_cache
-from types import coroutine
 import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.command import CommandBuilder
 from silex_client.utils.parameter_types import  MultipleSelectParameterMeta
 from silex_maya.utils import thread as thread_maya 
 from silex_client.utils import thread as thread_client 
@@ -15,13 +12,10 @@ from silex_client.utils import thread as thread_client
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils import utils
-
-from maya import cmds
-import gazu.files
+from maya import cmds, mel
+from  maya. app.renderSetup.model import renderSetup 
+import contextlib
 import fileseq
-import subprocess
-import os
 import pathlib
 import logging
 
@@ -50,73 +44,69 @@ class ExportAss(CommandBase):
         },
         "render_layers": {
             "label": "Select render layers",
-            "type": MultipleSelectParameterMeta,
-            "value": ['defaultRenderLayer'],
+            "type": MultipleSelectParameterMeta(),
+            "value": ['masterLayer'],
         },
    
     }
 
+    @contextlib.contextmanager
+    def _maintained_render_layer(self):
+        """Create a context"""
+        previous_rs = renderSetup.instance().getVisibleRenderLayer()
+        try:
+            yield
+        finally:
+            renderSetup.instance().switchToLayer(previous_rs)
 
-    def _export_sequence(self,logger, path: pathlib.Path, frame_range: fileseq.FrameSet, render_layers: List[str], render_scene: pathlib.Path):
+    def _export_sequence(self,logger, path: pathlib.Path, frame_range: fileseq.FrameSet, selected_render_layers:  List[str]) -> List[pathlib.Path]:
         """Export ass for each frame and each render layers"""
 
-        # Set export rule for maya 
-        cmds.workspace(fileRule=['ASS', path.parents[0]])
-
         frames_list = list(frame_range)
-        render_layers_dirs: List[pathlib.Path] = list()
+ 
+        # Each render layer is exported to a different directory
+        output_path = path.parents[0] / '<RenderLayer>' / f'{path.stem}_<RenderLayer>'
 
-        # Export each render layers separetly
-        for layer in render_layers:
-            
-            # Create layer folder ( in temporary dict )
-            layer_dir: pathlib.Path = path.parents[0] / layer
-            os.makedirs(layer_dir, exist_ok=True)
+        # We use a context to switch between layers so the user can still work in his scene
+        with self._maintained_render_layer():
 
-            # Each render layer is exported to a different directory
-            render_layer_path = path.parents[0] / layer / f'{path.stem}_{layer}'
-            ass_files = list(fileseq.FileSequence(f"{render_layer_path}.{frame_range}#{path.suffix}", pad_style=fileseq.PAD_STYLE_HASH4))
+            ############
+            render_layers: List[Any] = renderSetup.instance().getRenderLayers()
+            render_layers_dict: Dict[str, Any] = dict(zip([layer.name() for layer in render_layers], render_layers))
+            ##########
 
-            # Each ass file conresponds to a frame
-            frame_to_ass_dict = dict(zip(frames_list, ass_files))
+            if 'masterLayer' in selected_render_layers:
+                mel.eval('$tmp = $gMainProgressBar; timeField -edit -value `currentTime -query` TimeSlider|MainTimeSliderLayout|formLayout8|timeField1; renderLayerDisplayName masterLayer;')
+                render_layers_dict.update({'masterLayer': renderSetup.instance().getVisibleRenderLayer()})
 
-            # Export sequence
-            for frame in frame_to_ass_dict:
+            # Each layer is exported seperatly
+            for layer_name in selected_render_layers:
+                layer: Any = render_layers_dict[layer_name]
+                # We export a ass file for every frame in the range
+                for frame in frames_list:
+                    # Export the active layer in context
+                    renderSetup.instance().switchToLayer(layer)
+                    cmds.arnoldExportAss(asciiAss=1, sf=frame, ef=frame, f=output_path)
 
-                batch_cmd = (
-                    CommandBuilder("C:/Maya2022/Maya2022/bin/Render.exe", delimiter=None)
-                    .param("r", "arnold")
-                    .param("rl", layer)
-                    .param("exportFileName", str(frame_to_ass_dict[frame]))
-                    .param("noRender")
-                )
-
-                batch_cmd.set_last_param(str(render_scene))
-                logger.error(batch_cmd)
-
-                subprocess.call(batch_cmd.as_argv(), shell=True)
-
-            render_layers_dirs.append(layer_dir)
-        
-        return render_layers_dirs
+        return [(path.parents[0] / layer) for layer in selected_render_layers]
 
     @CommandBase.conform_command()
     async def __call__(
         self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
     ):
+    
         file_name: pathlib.Path = parameters["file_name"]
         directory: pathlib.Path = parameters["directory"] / file_name  # The directory parameter is temp directory
-        extension: Dict[str, str] = (await gazu.files.get_output_type_by_name("ass"))['short_name']
-        output_path = (directory / file_name).with_suffix(f'.{extension}')
+        output_path_without_extension = (directory / file_name)
 
-        render_layers: List[str] = parameters['render_layers']
+        selected_render_layers: List[str] = parameters['render_layers']
+        # render_layers_dict: Dict[str, Any] = action_query.store['ExportAss_render_layers_dict']
         frame_range: fileseq.FrameSet = parameters['frame_range']
 
-        # Export to a ass sequence for each frame (in the awsome, brand new temporary directory)
-        render_scene = pathlib.Path(await thread_maya.execute_in_main_thread(cmds.file, q=True, sn=True))
-        render_layers_dirs: List[pathlib.Path] = await thread_client.execute_in_thread(self._export_sequence,logger, output_path, frame_range, render_layers, render_scene)
+        # Export to a ass sequence for each frame (in an awsome, brand new temporary directory)
+        render_layers_dirs: List[pathlib.Path] = await thread_maya.execute_in_main_thread(self._export_sequence,logger, output_path_without_extension, frame_range, selected_render_layers)
 
-        return render_layers_dirs
+        return directory
 
 
     async def setup(
@@ -126,11 +116,20 @@ class ExportAss(CommandBase):
         logger: logging.Logger,
     ):
 
-        # Add render layers to parameters
-        render_layers: List[str] = await thread_maya.execute_in_main_thread(cmds.ls, typ='renderLayer')
-        self.command_buffer.parameters["render_layers"].type = MultipleSelectParameterMeta(*render_layers)
+        # # Add render layers to parameters
+        # render_layers: List[Any] = renderSetup.instance().getRenderLayers()
+        # render_layers_dict: Dict[str, Any] = dict(zip([layer.name() for layer in render_layers], render_layers))
+        # render_layers_dict.update({'defaultRenderLayer': True})
+        # action_query.store['ExportAss_render_layers_dict'] = render_layers_dict
+        # self.command_buffer.parameters["render_layers"].type = MultipleSelectParameterMeta(*render_layers_dict.keys())
 
-       
+
+        # Add render layers to parameters
+        if 'render_layers' in parameters:
+            render_layers: List[Any] = await thread_maya.execute_in_main_thread( renderSetup.instance().getRenderLayers )
+            selection_list: List[str] = ['masterLayer'] + [layer.name() for layer in render_layers]
+            self.command_buffer.parameters["render_layers"].type = MultipleSelectParameterMeta(*selection_list)
+        
 # from __future__ import annotations
 # import typing
 # from typing import Any, Dict, List
@@ -340,4 +339,4 @@ class ExportAss(CommandBase):
       
 #         self.command_buffer.parameters["camera"].type = SelectParameterMeta(*cam_list)
 #         self.command_buffer.parameters["camera"].value = cam_list[0]
-       
+    

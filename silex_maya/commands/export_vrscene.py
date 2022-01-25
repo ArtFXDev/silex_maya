@@ -12,8 +12,6 @@ from silex_client.utils import thread as thread_client
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils import utils
-
 from maya import cmds
 import gazu.files
 import os
@@ -41,7 +39,7 @@ class ExportVrscene(CommandBase):
         },
         "render_layers": {
             "label": "Select render layers",
-            "type": MultipleSelectParameterMeta,
+            "type": MultipleSelectParameterMeta(),
             "value": ['defaultRenderLayer'],
         },
     }
