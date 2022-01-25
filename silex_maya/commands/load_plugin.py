@@ -1,14 +1,17 @@
 from __future__ import annotations
-from silex_client.action.command_base import CommandBase
 
 import typing
 from typing import Any, Dict
-from silex_maya.utils import utils
+
+from silex_client.action.command_base import CommandBase
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
+
 import logging
+
 from maya import cmds
 
 
@@ -32,11 +35,11 @@ class LoadPlugin(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-    
+
         plugin_name = parameters.get("plugin_name")
 
         def load_plugin(plugin_name):
             cmds.loadPlugin(plugin_name)
 
         logger.info(f"Load: {plugin_name}")
-        await utils.wrapped_execute(action_query, load_plugin, plugin_name)
+        await execute_in_main_thread(load_plugin, plugin_name)

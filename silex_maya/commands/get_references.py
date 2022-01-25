@@ -1,31 +1,28 @@
 from __future__ import annotations
 
-import fileseq
+import logging
 import pathlib
 import typing
-import logging
-from typing import Any, Dict, Tuple, List, Union
+from typing import Any, Dict, List, Tuple
 
+import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
-from silex_client.utils.files import is_valid_pipeline_path, is_valid_path
-from silex_maya.utils import utils
+from silex_client.utils.files import (
+    find_sequence_from_path,
+    is_valid_pipeline_path,
+    sequence_exists,
+)
+from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
+
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from maya import cmds
 import maya.app.general.fileTexturePathResolver as ftpr
-
-
-References = List[
-    Tuple[
-        List[str],
-        Union[List[pathlib.Path], pathlib.Path],
-    ]
-]
+from maya import cmds
 
 
 class GetReferences(CommandBase):
@@ -34,14 +31,8 @@ class GetReferences(CommandBase):
     """
 
     parameters = {
-        "skip_conformed": {
-            "label": "Skip conformed references",
-            "type": bool,
-            "value": True,
-            "tooltip": "The references that point to a file that is already in the right folder will be skipped",
-        },
-        "filters": {
-            "label": "Custom filters",
+        "excluded_extensions": {
+            "label": "Excluded extensions",
             "type": ListParameterMeta(str),
             "value": [],
             "tooltip": "List of file extensions to ignore",
@@ -53,9 +44,10 @@ class GetReferences(CommandBase):
         self, action_query: ActionQuery, file_path: pathlib.Path, parameter: Any
     ) -> Tuple[pathlib.Path, bool, bool]:
         """
-        Helper to prompt the user for a new path and wait for its response
+        When a reference is not reachable, this method can be used to prompt the user.
+        The user can either choose a new path, skip the reference, or skip all unreachable references
         """
-        # Create a new parameter to prompt for the new file path
+        # Create all the parameters for the prompt
         info_parameter = ParameterBuffer(
             type=TextParameterMeta("warning"),
             name="info",
@@ -79,7 +71,7 @@ class GetReferences(CommandBase):
             value=False,
             label=f"Skip this reference",
         )
-        # Prompt the user to get the new path
+        # Send the prompt with all the created parameters
         response = await self.prompt_user(
             action_query,
             {
@@ -93,19 +85,57 @@ class GetReferences(CommandBase):
             response["new_path"] = pathlib.Path(response["new_path"])
         return response["new_path"], response["skip"], response["skip_all"]
 
-    def _test_possible_sequence(self, attribute: str):
+    def _test_possible_sequence(self, attribute: str) -> bool:
         """
-        Define the function to test if an attribute might return a file sequence or not
+        For some references, we don't want to look for sequences
         """
-        # Test the parameters for a file node:
+        # Test the parameters for a file node
         if cmds.nodeType(attribute) == "file":
             node = ".".join(attribute.split(".")[:-1])
-            if cmds.getAttr(f"{node}.uvTilingMode") != 0:
-                return True
-            if cmds.getAttr(f"{node}.useFrameExtension") == 1:
-                return True
+            if cmds.getAttr(f"{node}.uvTilingMode") == 0:
+                return False
+            if cmds.getAttr(f"{node}.useFrameExtension") != 1:
+                return False
 
-        return False
+        return True
+
+    def _get_scene_references(self) -> List[Tuple[str, pathlib.Path]]:
+        """
+        List all the references in the current scene
+        Return the reference node/attribute and the file path
+        """
+        cmds.filePathEditor(rf=True)
+        referenced_files: List[Tuple[str, pathlib.Path]] = []
+
+        # Get the referenced files from the file path editor
+        for attribute in cmds.filePathEditor(q=True, lf="", ao=True) or []:
+            # Skip the nodes that are from an other referenced scene
+            if cmds.referenceQuery(attribute, isNodeReferenced=True):
+                continue
+            # If the attribute is a maya/alembic/... reference
+            if cmds.nodeType(attribute) == "reference":
+                file_path = cmds.referenceQuery(
+                    attribute, filename=True, withoutCopyNumber=True
+                )
+                referenced_files.append((attribute, pathlib.Path(file_path)))
+                continue
+            # Otherwise, just get the attribute for simple stuff like file nodes
+            file_path = cmds.getAttr(attribute)
+            referenced_files.append((attribute, pathlib.Path(file_path)))
+
+        # Make sure to not have duplicates in the references
+        return list(set(referenced_files))
+
+    def _get_reference_sequence(self, file_path: pathlib.Path) -> fileseq.FileSequence:
+        """
+        Convert the reference's file path into a sequence
+        The reference is not a sequence, the returned value will be a sequence of one item
+        """
+        pattern_match = ftpr.findAllFilesForPattern(str(file_path), None)
+        if len(pattern_match) > 0:
+            file_path = pathlib.Path(str(pattern_match[0]))
+
+        return find_sequence_from_path(file_path)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -114,110 +144,61 @@ class GetReferences(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        # Define the function to get all the referenced files in the scene
-        def get_referenced_files():
-            cmds.filePathEditor(rf=True)
-            referenced_files: List[Tuple[str, pathlib.Path]] = []
-
-            # Get the referenced files from the file path editor
-            for attribute in cmds.filePathEditor(q=True, lf="", ao=True) or []:
-                # Skip the nodes that are from an other referenced scene
-                if cmds.referenceQuery(attribute, isNodeReferenced=True):
-                    continue
-                # If the attribute is a maya/alembic/... reference
-                if cmds.nodeType(attribute) == "reference":
-                    file_path = cmds.referenceQuery(
-                        attribute, filename=True, withoutCopyNumber=True
-                    )
-                    referenced_files.append((attribute, pathlib.Path(file_path)))
-                    continue
-                # Otherwise, just get the attribute for simple stuff like file nodes
-                file_path = cmds.getAttr(attribute)
-                referenced_files.append((attribute, pathlib.Path(file_path)))
-            return referenced_files
-
-        # Execute the get_referenced_files in the main thread
-        referenced_files = await (
-            await utils.wrapped_execute(action_query, get_referenced_files)
-        )
-
-        # Remove duplicates references
-        referenced_files = list(set(referenced_files))
+        excluded_extensions = parameters["excluded_extensions"]
 
         # Each referenced file must be verified
-        references_found: References = []
+        references: List[Tuple[str, fileseq.FileSequence]] = []
+        referenced_files = await execute_in_main_thread(self._get_scene_references)
 
-        # Check if the referenced files are reachable and prompt the user if not
         skip_all = False
         for attribute, file_path in referenced_files:
-            # The value might be using a special pattern, we need to use findAllFilesForPattern
-            file_sequence = ftpr.findAllFilesForPattern(str(file_path), None)
-            if len(file_sequence) > 0:
-                file_path = [pathlib.Path(str(file)) for file in file_sequence][0]
+            # Get the sequence that correspond to the file path
+            file_paths = await execute_in_main_thread(
+                self._get_reference_sequence, file_path
+            )
 
             # Make sure the file path leads to a reachable file
             skip = False
-            while not file_path.exists() or not file_path.is_absolute():
+            while not sequence_exists(file_paths):
                 if skip_all:
                     skip = True
                     break
                 logger.warning(
-                    "Could not reach the file %s at %s", file_path, attribute
+                    "Could not reach the file(s) %s at %s", file_paths, attribute
                 )
                 file_path, skip, skip_all = await self._prompt_new_path(
                     action_query, file_path, attribute
                 )
                 if skip or file_path is None or skip_all:
-                    skip = True
                     break
+                file_paths = await execute_in_main_thread(
+                    self._get_reference_sequence, file_path
+                )
             # The user can decide to skip the references that are not reachable
             if skip or file_path is None:
                 logger.info("Skipping the reference at %s", attribute)
                 continue
 
             # Skip the references that are already conformed
-            if parameters["skip_conformed"] and is_valid_pipeline_path(file_path):
+            if all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
                 continue
 
             # Skip the custom extensions provided
-            if "".join(file_path.suffixes) in parameters["filters"]:
+            if file_paths.extension() in excluded_extensions:
                 continue
 
-            sequence = None
-            # Test in the main thread if the current attribute might point to a sequence
-            is_possible_sequence = await utils.wrapped_execute(
-                action_query, self._test_possible_sequence, attribute
-            )
-            if await is_possible_sequence:
-                # Look for a file sequence
-                for file_sequence in fileseq.findSequencesOnDisk(str(file_path.parent)):
-                    # Find the file sequence that correspond the to file we are looking for
-                    sequence_list = [pathlib.Path(str(file)) for file in file_sequence]
-                    if file_path in sequence_list and len(sequence_list) > 1:
-                        sequence = file_sequence
-                        file_path = sequence_list
-                        break
-
             # Append to the verified path
-            references_found.append((attribute, file_path))
-            if sequence is None:
-                logger.info("Referenced file(s) %s found at %s", file_path, attribute)
-            else:
-                logger.info("Referenced file(s) %s found at %s", sequence, attribute)
+            references.append((attribute, file_paths))
+            logger.info("Referenced file(s) %s found at %s", file_paths, attribute)
 
         # Display a message to the user to inform about all the references to conform
-        current_scene = await utils.wrapped_execute(
-            action_query, cmds.file, q=True, sn=True
+        current_scene = await execute_in_main_thread(cmds.file, q=True, sn=True)
+        message = (
+            f"The scene\n{current_scene}\nis referencing non conformed file(s) :\n\n"
         )
-        referenced_file_paths = [
-            fileseq.findSequencesInList(reference[1])
-            if isinstance(reference[1], list)
-            else [reference[1]]
-            for reference in references_found
-        ]
-        message = f"The scene\n{await current_scene}\nis referencing non conformed file(s) :\n\n"
-        for file_path in referenced_file_paths:
-            message += f"- {' '.join([str(f) for f in file_path])}\n"
+
+        for _, file_path in references:
+            message += f"- {file_path}\n"
 
         message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
         info_parameter = ParameterBuffer(
@@ -226,13 +207,19 @@ class GetReferences(CommandBase):
             label="Info",
             value=message,
         )
-        # Send the message to the user
-        if referenced_file_paths:
+        # Send the message to inform the user
+        if references:
             await self.prompt_user(action_query, {"info": info_parameter})
 
+        reference_attributes = [ref[0] for ref in references]
+        reference_file_paths = [
+            list(pathlib.Path(str(path)) for path in file_paths[1])
+            for file_paths in references
+        ]
+
         return {
-            "attributes": [ref[0] for ref in references_found],
-            "file_paths": [ref[1] for ref in references_found],
+            "attributes": reference_attributes,
+            "file_paths": reference_file_paths,
         }
 
     async def setup(
