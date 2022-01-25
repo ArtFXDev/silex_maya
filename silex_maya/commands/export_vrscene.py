@@ -17,7 +17,8 @@ from silex_maya.utils import thread as thread_maya
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import logging
+from maya import cmds
+import gazu.files
 import os
 import pathlib
 import subprocess
@@ -47,7 +48,8 @@ class ExportVrscene(CommandBase):
         "render_layers": {
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
-            "value": ["defaultRenderLayer"],
+            "value": ['defaultRenderLayer'],
+
         },
     }
 
