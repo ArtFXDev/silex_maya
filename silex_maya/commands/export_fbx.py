@@ -1,24 +1,24 @@
 from __future__ import annotations
+
+import logging
+import os
+import pathlib
 import typing
-from concurrent.futures import Future
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParameterMeta
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from silex_maya.utils import utils
-
-from maya import cmds
-import gazu.files
-import os
-import pathlib
 import gazu
-import logging
+import gazu.files
+from maya import cmds
+
 
 class ExportFBX(CommandBase):
     """
@@ -36,8 +36,8 @@ class ExportFBX(CommandBase):
             "type": pathlib.Path,
             "value": None,
         },
-        "root_name": {"label": "Out Object Name", "type": str, "value": "" },
-         "timeline_as_framerange": {
+        "root_name": {"label": "Out Object Name", "type": str, "value": ""},
+        "timeline_as_framerange": {
             "label": "Take timeline as frame-range?",
             "type": bool,
             "value": False,
@@ -49,7 +49,9 @@ class ExportFBX(CommandBase):
         },
     }
 
-    async def _prompt_info_parameter(self, action_query: ActionQuery, message: str, level: str = "warning") -> pathlib.Path:
+    async def _prompt_info_parameter(
+        self, action_query: ActionQuery, message: str, level: str = "warning"
+    ) -> pathlib.Path:
         """
         Helper to prompt the user a label
         """
@@ -59,7 +61,7 @@ class ExportFBX(CommandBase):
             type=TextParameterMeta(level),
             name="Info",
             label="Info",
-            value= f"Warning : {message}",
+            value=f"Warning : {message}",
         )
         # Prompt the user with a label
         prompt = await self.prompt_user(action_query, {"info": info_parameter})
@@ -71,35 +73,46 @@ class ExportFBX(CommandBase):
         """Get selection in open scene"""
 
         # Authorized type
-        authorized_types: List[str] = ["transform", "mesh", "camera"]        
+        authorized_types: List[str] = ["transform", "mesh", "camera"]
 
-        # Get current selection 
-        selected = cmds.ls(sl=True,long=True) or []
-        selected.sort(key=len, reverse=True) # reverse
-        selected = [item for item in selected if cmds.objectType(item) in authorized_types]
+        # Get current selection
+        selected = cmds.ls(sl=True, long=True) or []
+        selected.sort(key=len, reverse=True)  # reverse
+        selected = [
+            item for item in selected if cmds.objectType(item) in authorized_types
+        ]
 
         return selected
 
     # Get select objects
-    def export_fbx(self, export_path, object_list, used_timeline, start_frame, end_frame):
+    def export_fbx(
+        self, export_path, object_list, used_timeline, start_frame, end_frame
+    ):
         """Export in fbx format"""
         if used_timeline:
             start_frame = cmds.playbackOptions(q=True, animationStartTime=True)
             end_frame = cmds.playbackOptions(q=True, animationEndTime=True)
 
         cmds.select(object_list)
-        cmds.bakeResults(object_list) # Needed
+        cmds.bakeResults(object_list)  # Needed
         cmds.FBXExportSplitAnimationIntoTakes("-clear")
-        cmds.FBXExportSplitAnimationIntoTakes("-v", "Maya_FBX_Export_Take", start_frame, end_frame)
+        cmds.FBXExportSplitAnimationIntoTakes(
+            "-v", "Maya_FBX_Export_Take", start_frame, end_frame
+        )
         cmds.FBXExport("-f", export_path, "-s")
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
-    
+
         # Get the output path
-        directory: pathlib.Path = parameters["directory"] # directory parameter is temp directory
+        directory: pathlib.Path = parameters[
+            "directory"
+        ]  # directory parameter is temp directory
         file_name: pathlib.Path = parameters["file_name"]
         root_name: str = parameters["root_name"]
         used_timeline: bool = parameters["timeline_as_framerange"]
@@ -107,23 +120,35 @@ class ExportFBX(CommandBase):
         end_frame: int = parameters["frame_range"][1]
 
         # Get selected object
-        selected: Future = await utils.wrapped_execute(action_query, self.selected_objects)
-        selected: List[str] = await selected
-        
+        selected: List[str] = await execute_in_main_thread(self.selected_objects)
+
         while len(selected) == 0:
-            await self._prompt_info_parameter(action_query, "Could not export the selection: No selection detected")
-            selected = await utils.wrapped_execute(action_query, self.selected_objects)
-        
+            await self._prompt_info_parameter(
+                action_query, "Could not export the selection: No selection detected"
+            )
+            selected = await execute_in_main_thread(self.selected_objects)
+
         # create temps directory
         os.makedirs(directory, exist_ok=True)
 
         # Compute path
-        export_path = directory / f"{file_name}_{root_name}" if root_name else directory / f"{file_name}"
+        export_path = (
+            directory / f"{file_name}_{root_name}"
+            if root_name
+            else directory / f"{file_name}"
+        )
         extension = await gazu.files.get_output_type_by_name("fbx")
         export_path = export_path.with_suffix(f".{extension['short_name']}")
 
         # Export obj to fbx
-        await utils.wrapped_execute(action_query, self.export_fbx, export_path, selected, used_timeline, start_frame, end_frame)
+        await execute_in_main_thread(
+            self.export_fbx,
+            export_path,
+            selected,
+            used_timeline,
+            start_frame,
+            end_frame,
+        )
 
         return export_path
 
@@ -133,5 +158,7 @@ class ExportFBX(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-        self.command_buffer.parameters["frame_range"].hide = parameters.get("timeline_as_framerange")
+        self.command_buffer.parameters["frame_range"].hide = parameters.get(
+            "timeline_as_framerange", False
+        )
         pass

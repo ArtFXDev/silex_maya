@@ -8,7 +8,6 @@ from typing import Any, Dict, List
 
 import gazu.task
 from silex_client.action.command_base import CommandBase, CommandParameters
-from silex_client.utils.log import logger
 
 # Forward references
 if typing.TYPE_CHECKING:

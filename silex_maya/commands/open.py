@@ -1,17 +1,19 @@
 from __future__ import annotations
+
+import logging
+import pathlib
 import typing
 from typing import Any, Dict
 
-import pathlib
-from silex_maya.utils import utils
 from silex_client.action.command_base import CommandBase
-import logging
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
+
 from maya import cmds
 
 
@@ -43,10 +45,9 @@ class Open(CommandBase):
         file_path = parameters["file_path"]
 
         # First get the current file name
-        current_file = await utils.wrapped_execute(
-            action_query, cmds.file, q=True, sn=True, prompt=False
+        current_file = await execute_in_main_thread(
+            cmds.file, q=True, sn=True, prompt=False
         )
-        current_file = await current_file
 
         # Test if the scene that we have to open exists
         if not os.path.exists(file_path) or not os.path.isabs(file_path):
@@ -72,6 +73,6 @@ class Open(CommandBase):
 
         # Execute the open function in the main thread
         logger.info("Openning file %s", file_path)
-        await utils.wrapped_execute(action_query, open, file_path=file_path)
+        await execute_in_main_thread(open, file_path=file_path)
 
         return {"old_path": current_file, "new_path": parameters["file_path"]}

@@ -1,23 +1,36 @@
 from __future__ import annotations
-from silex_maya.utils import utils
+
+import logging
+import pathlib
+import re
 import typing
 from typing import Any, Dict, List
 
+import fileseq
+from maya import cmds
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import ListParameterMeta, AnyParameter
-import logging
+from silex_client.utils.files import format_sequence_string
+from silex_client.utils.parameter_types import AnyParameter, ListParameterMeta
+
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from maya import cmds
+
+# Some references are actually read only, and set from an other attribute
+ATTRIBUTE_MAPPING = {
+    "VRayVolumeGrid": {
+        "inPathResolved": "inPath",
+    }
+}
 
 
 class SetReferences(CommandBase):
     """
     Repath the given references
-    """
+        "inPathResolved": "inPath","""
 
     parameters = {
         "attributes": {
@@ -32,9 +45,67 @@ class SetReferences(CommandBase):
         },
     }
 
+    def _get_attribute(self, attribute: str):
+        """
+        Maya has some readonly attribute that are set by and other attribute
+
+        If that's the case, we need to find the setter attribute using the
+        ATTRIBUTE_MAPPING mapping
+        """
+        node_type = cmds.nodeType(attribute)
+        attribute_split = attribute.split(".")
+
+        if len(attribute_split) <= 1:
+            return attribute
+
+        attrib_name = attribute_split[-1]
+        node_name = attribute_split[0]
+
+        attrib_name = (
+            ATTRIBUTE_MAPPING.get(node_type, {}).get(attrib_name) or attrib_name
+        )
+        return ".".join([node_name, attrib_name])
+
+    def _set_reference(self, attribute: str, value: fileseq.FileSequence) -> str:
+        # If the attribute is a maya reference
+        if cmds.nodeType(attribute) == "reference":
+            reference_value = str(pathlib.Path(str(value.index(0))))
+            cmds.file(reference_value, loadReference=attribute)
+            return reference_value
+        # If the attribute is from an other referenced scene
+        if cmds.referenceQuery(attribute, isNodeReferenced=True):
+            return ""
+
+        previous_value = cmds.getAttr(attribute)
+        REGEX_MATCH = [
+            re.compile(r"^.+\W(\<.+\>)\W.+$"),  # Matches V-ray's <Whatever> syntax
+            re.compile(r"^.+[^\w#](#+)\W.+$"),  # Matches V-ray's ####  syntax
+        ]
+        reference_value = format_sequence_string(value, previous_value, REGEX_MATCH)
+
+        # If it is just a file node or a texture...
+        split_attributes = attribute.split(".")
+
+        base_node = split_attributes[0]
+        colorspace_attribute = ""
+        colorspace_value = ""
+        if cmds.attributeQuery("colorSpace", node=attribute, exists=True):
+            colorspace_attribute = f"{base_node}.colorSpace"
+            colorspace_value = cmds.getAttr(colorspace_attribute)
+
+        # File node
+        cmds.setAttr(attribute, reference_value, type="string")
+        if cmds.attributeQuery("colorSpace", node=attribute, exists=True):
+            cmds.setAttr(colorspace_attribute, colorspace_value, type="string")
+
+        return reference_value
+
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         attributes: List[str] = parameters["attributes"]
         values = []
@@ -44,45 +115,18 @@ class SetReferences(CommandBase):
             value = value.get_value(action_query)
             values.append(value)
 
-        # Define the function that will repath all the references
-        def set_reference(attribute, value):
-            # If the attribute is a maya reference
-            if cmds.nodeType(attribute) == "reference":
-                cmds.file(value, loadReference=attribute)
-                return value
-            # If the attribute if from an other referenced scene
-            if cmds.referenceQuery(attribute, isNodeReferenced=True):
-                return ""
-            
-            # If it is just a file node or a texture...
-            split_attributes = attribute.split(".")
-            if len(split_attributes) == 0:
-                raise Exception("split_attributes is empty.") # this should never happen
-
-            base_node = split_attributes[0]
-            aces_attribute = ""
-            aces_value = ""
-            if cmds.attributeQuery("colorSpace", node=attribute, exists=True):
-                aces_attribute = f"{base_node}.colorSpace"
-                aces_value = cmds.getAttr(aces_attribute)
-
-            # file node
-            cmds.setAttr(attribute, value, type="string")
-            if cmds.attributeQuery("colorSpace", node=attribute, exists=True):
-                cmds.setAttr(aces_attribute, aces_value, type="string")
-
-            return value
-
         # Execute the function in the main thread
         new_values = []
         for attribute, value in zip(attributes, values):
-            if isinstance(value, list):
-                value = value[-1]
+            if not isinstance(value, list):
+                value = [value]
+            value = fileseq.findSequencesInList(value)[0]
 
-            new_value = await utils.wrapped_execute(
-                action_query, set_reference, attribute, value
+            attribute = await execute_in_main_thread(self._get_attribute, attribute)
+            new_value = await execute_in_main_thread(
+                self._set_reference, attribute, value
             )
             logger.info("Attribute %s set to %s", attribute, value)
-            new_values.append(await new_value)
+            new_values.append(new_value)
 
         return new_values
