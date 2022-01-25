@@ -1,12 +1,12 @@
 from __future__ import annotations
-import typing
+
 import logging
+import typing
 from typing import Any, Dict
 
 from maya import cmds
-
 from silex_client.action.command_base import CommandBase
-from silex_maya.utils import utils
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -23,7 +23,7 @@ class CheckNgones(CommandBase):
         self,
         parameters: Dict[str, Any],
         action_query: ActionQuery,
-        logger: logging.logger,
+        logger: logging.Logger,
     ):
         def check_ngons():
             logger.info("check ngones")
@@ -43,4 +43,4 @@ class CheckNgones(CommandBase):
 
                 raise Exception(f"{sel_size} N-gones found")
 
-        await utils.wrapped_execute(action_query, lambda: check_ngons())
+        await execute_in_main_thread(lambda: check_ngons())

@@ -1,6 +1,6 @@
 import maya.cmds as cmds
-from silex_client.resolve.config import Config
 from silex_client.action.action_query import ActionQuery
+from silex_client.resolve.config import Config
 
 
 def create_shelf():

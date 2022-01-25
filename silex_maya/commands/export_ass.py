@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import typing
 from typing import Any, Dict, List
 
@@ -6,6 +7,8 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import  MultipleSelectParameterMeta
 from silex_maya.utils import thread as thread_maya 
 
+
+from silex_maya.utils import thread as thread_maya
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -16,7 +19,12 @@ from  maya. app.renderSetup.model import renderSetup
 import contextlib
 import fileseq
 import pathlib
-import logging
+import subprocess
+
+import fileseq
+import gazu.files
+from maya import cmds
+
 
 class ExportAss(CommandBase):
     """
@@ -28,13 +36,13 @@ class ExportAss(CommandBase):
             "label": "File directory",
             "type": pathlib.Path,
             "value": None,
-            "hide": True
+            "hide": True,
         },
         "file_name": {
             "label": "File name",
             "type": pathlib.Path,
             "value": None,
-            "hide": True
+            "hide": True,
         },
         "frame_range": {
             "label": "Frame range (start, end, step)",
@@ -46,7 +54,6 @@ class ExportAss(CommandBase):
             "type": MultipleSelectParameterMeta(),
             "value": ['masterLayer'],
         },
-   
     }
 
     @contextlib.contextmanager
@@ -61,6 +68,7 @@ class ExportAss(CommandBase):
     def _export_sequence(self, path: pathlib.Path, frame_range: fileseq.FrameSet, selected_render_layers:  List[str]):
         """Export ass for each frame and each render layers"""
 
+
         frames_list = list(frame_range)
  
         # Each render layer is exported to a different directory
@@ -73,6 +81,7 @@ class ExportAss(CommandBase):
             render_layers: List[Any] = renderSetup.instance().getRenderLayers()
             render_layers_dict: Dict[str, Any] = dict(zip([layer.name() for layer in render_layers], render_layers))
 
+          
             # Get master layer if it has been selected in the parameters
             if 'masterLayer' in selected_render_layers:
                 # Switch masterlayer to visible and add it to the dictionary
@@ -90,9 +99,13 @@ class ExportAss(CommandBase):
                     renderSetup.instance().switchToLayer(layer)
                     cmds.arnoldExportAss(asciiAss=1, sf=frame, ef=frame, f=output_path)
 
+
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
     
         file_name: pathlib.Path = parameters["file_name"]
@@ -105,8 +118,8 @@ class ExportAss(CommandBase):
         # Export to a ass sequence for each frame (in an awsome, brand new temporary directory)
         await thread_maya.execute_in_main_thread(self._export_sequence,logger, output_path_without_extension, frame_range, selected_render_layers)
 
-        return directory
 
+        return directory
 
     async def setup(
         self,
