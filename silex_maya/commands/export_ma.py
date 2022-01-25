@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import typing
-from concurrent.futures import Future
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
-
-from silex_maya.utils import utils
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -64,10 +62,9 @@ class ExportMa(CommandBase):
             )
 
             # Get selected objects
-            future: Any = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
-            slection_list = await future
+            selection_list: Any = await execute_in_main_thread(cmds.ls, sl=1)
 
-            if len(slection_list) or prompt["full_scene"]:
+            if len(selection_list) or prompt["full_scene"]:
                 return True
 
     @CommandBase.conform_command()
@@ -90,17 +87,15 @@ class ExportMa(CommandBase):
         )
 
         # Export the selection in ma
-        future: Future = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
-        slection_list: List[str] = future.result()
+        selection_list: List[str] = await execute_in_main_thread(cmds.ls, sl=1)
 
         # Prompt warning
-        if not len(slection_list):
+        if not len(selection_list):
             full_scene = await self._prompt_warning(action_query)
 
         # Export in temps directory
         os.makedirs(directory, exist_ok=True)
-        await utils.wrapped_execute(
-            action_query,
+        await execute_in_main_thread(
             cmds.file,
             export_path,
             es=not (full_scene),

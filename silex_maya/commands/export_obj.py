@@ -3,12 +3,10 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict
 
-from genericpath import exists
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
-
-from silex_maya.utils import utils
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -19,6 +17,7 @@ import os
 import pathlib
 
 import gazu
+import gazu.files
 from maya import cmds
 
 
@@ -84,18 +83,15 @@ class ExportOBJ(CommandBase):
     ):
 
         # Get the output path
-        directory = parameters.get("directory")
-        file_name = parameters.get("file_name")
-        root_name = parameters.get("root_name")
+        directory: pathlib.Path = parameters["directory"]
+        file_name: pathlib.Path = parameters["file_name"]
+        root_name: str = parameters["root_name"]
 
         # Authorized types
         authorized_types = ["mesh", "transform"]
 
         # Get selection
-        selected = await utils.wrapped_execute(
-            action_query, lambda: self.selected_objects()
-        )
-        selected = await selected
+        selected = await execute_in_main_thread(lambda: self.selected_objects())
 
         # Exclude unauthorized types
         selected = [
@@ -110,10 +106,7 @@ class ExportOBJ(CommandBase):
                 "Could not export the selection: Select only one mesh component.",
             )
             # Get selection
-            selected = await utils.wrapped_execute(
-                action_query, lambda: self.selected_objects()
-            )
-            selected = await selected
+            selected = await execute_in_main_thread(lambda: self.selected_objects())
 
             # Exclude unauthorized types
             selected = [
@@ -135,8 +128,7 @@ class ExportOBJ(CommandBase):
         export_path = export_path.with_suffix(f".{extension['short_name']}")
 
         # Export in OBJ
-        await utils.wrapped_execute(
-            action_query,
+        await execute_in_main_thread(
             cmds.file,
             export_path,
             exportSelected=True,

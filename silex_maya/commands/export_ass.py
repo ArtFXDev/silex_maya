@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import typing
-from sys import path_importer_cache
-from types import coroutine
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
@@ -24,8 +22,6 @@ import subprocess
 import fileseq
 import gazu.files
 from maya import cmds
-
-from silex_maya.utils import utils
 
 
 class ExportAss(CommandBase):

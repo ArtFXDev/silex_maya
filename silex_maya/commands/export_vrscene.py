@@ -25,8 +25,6 @@ import subprocess
 import gazu.files
 from maya import cmds
 
-from silex_maya.utils import utils
-
 
 class ExportVrscene(CommandBase):
     """

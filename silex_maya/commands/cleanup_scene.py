@@ -9,8 +9,7 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
-
-from silex_maya.utils import utils
+from silex_maya.utils.thread import execute_in_main_thread
 from silex_maya.utils.scene import rename_duplicates_nodes
 
 # Forward references
@@ -69,10 +68,7 @@ class CleanupScene(CommandBase):
                 cmds.delete(unknown_node)
 
         # Clean unknown nodes
-        unknown_nodes = await utils.wrapped_execute(
-            action_query, cmds.ls, type="unknown"
-        )
-        unknown_nodes = await unknown_nodes
+        unknown_nodes = await execute_in_main_thread(cmds.ls, type="unknown")
         if unknown_nodes:
             message = f"""
             The current maya scene contains unknown nodes: 
@@ -81,20 +77,18 @@ class CleanupScene(CommandBase):
             This might be caused by a plugin that is not accessible on this computer
             """
             if await self._prompt_fix(action_query, textwrap.dedent(message)):
-                await utils.wrapped_execute(
-                    action_query, clear_unknown_nodes, unknown_nodes
-                )
+                await execute_in_main_thread(clear_unknown_nodes, unknown_nodes)
 
         # Rename duplicate names of reference nodes
-        reference_nodes = await utils.wrapped_execute(
-            action_query, cmds.filePathEditor, q=True, lf="", ao=True
+        reference_nodes = await execute_in_main_thread(
+            cmds.filePathEditor, q=True, lf="", ao=True
         )
         regex_filters = [
             re.compile(f"^.+{node.split('.')[0]}(?=\\||$)")
-            for node in await reference_nodes or []
+            for node in reference_nodes or []
         ]
-        nodes = await utils.wrapped_execute(action_query, cmds.ls)
-        duplicate_nodes = [node for node in await nodes if "|" in node]
+        nodes = await execute_in_main_thread(cmds.ls)
+        duplicate_nodes = [node for node in nodes if "|" in node]
         if any(
             regex.search(name) for regex in regex_filters for name in duplicate_nodes
         ):
@@ -105,6 +99,4 @@ class CleanupScene(CommandBase):
             Due to an error in maya's file path editor this can cause errors in the conform
             """
             if await self._prompt_fix(action_query, textwrap.dedent(message)):
-                await utils.wrapped_execute(
-                    action_query, rename_duplicates_nodes, regex_filters
-                )
+                await execute_in_main_thread(rename_duplicates_nodes, regex_filters)

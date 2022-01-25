@@ -1,24 +1,22 @@
 from __future__ import annotations
 
+import os
+import pathlib
 import logging
 import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import os
-import pathlib
-
 import gazu
 import gazu.files
 from maya import cmds
-
-from silex_maya.utils import utils
 
 
 class ExportABC(CommandBase):
@@ -115,8 +113,7 @@ class ExportABC(CommandBase):
         to_return_paths = []
 
         # Get selected objects
-        selected = await utils.wrapped_execute(action_query, self.select_objects)
-        selected = await selected
+        selected = await execute_in_main_thread(self.select_objects)
 
         # Set frame range
         if is_timeline:
@@ -139,8 +136,7 @@ class ExportABC(CommandBase):
             to_return_paths.append(str(export_path))
 
             # Export in alambic
-            await utils.wrapped_execute(
-                action_query,
+            await execute_in_main_thread(
                 self.export_abc,
                 start_frame,
                 end_frame,

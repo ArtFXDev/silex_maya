@@ -1,26 +1,23 @@
 from __future__ import annotations
 
+import logging
+import os
+import pathlib
 import typing
-from concurrent.futures import Future
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import IntArrayParameterMeta, TextParameterMeta
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-import logging
-import os
-import pathlib
-
 import gazu
 import gazu.files
 from maya import cmds
-
-from silex_maya.utils import utils
 
 
 class ExportFBX(CommandBase):
@@ -123,16 +120,13 @@ class ExportFBX(CommandBase):
         end_frame: int = parameters["frame_range"][1]
 
         # Get selected object
-        selected: Future = await utils.wrapped_execute(
-            action_query, self.selected_objects
-        )
-        selected: List[str] = await selected
+        selected: List[str] = await execute_in_main_thread(self.selected_objects)
 
         while len(selected) == 0:
             await self._prompt_info_parameter(
                 action_query, "Could not export the selection: No selection detected"
             )
-            selected = await utils.wrapped_execute(action_query, self.selected_objects)
+            selected = await execute_in_main_thread(self.selected_objects)
 
         # create temps directory
         os.makedirs(directory, exist_ok=True)
@@ -147,8 +141,7 @@ class ExportFBX(CommandBase):
         export_path = export_path.with_suffix(f".{extension['short_name']}")
 
         # Export obj to fbx
-        await utils.wrapped_execute(
-            action_query,
+        await execute_in_main_thread(
             self.export_fbx,
             export_path,
             selected,
@@ -166,6 +159,6 @@ class ExportFBX(CommandBase):
         logger: logging.Logger,
     ):
         self.command_buffer.parameters["frame_range"].hide = parameters.get(
-            "timeline_as_framerange"
+            "timeline_as_framerange", False
         )
         pass

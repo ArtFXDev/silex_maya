@@ -4,8 +4,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-
-from silex_maya.utils import utils
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -43,4 +42,4 @@ class LoadPlugin(CommandBase):
             cmds.loadPlugin(plugin_name)
 
         logger.info(f"Load: {plugin_name}")
-        await utils.wrapped_execute(action_query, load_plugin, plugin_name)
+        await execute_in_main_thread(load_plugin, plugin_name)
