@@ -11,7 +11,7 @@ ma:
       label: "Conform Maya scene's references"
       index: 20
       commands:
-        focus_maya:
+        focus_maya_a:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         open:
@@ -114,7 +114,7 @@ ma:
               value: !command-output "conform_references:conform_references"
               hide: true
         
-        focus_maya:
+        focus_maya_a:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         save:
@@ -124,7 +124,7 @@ ma:
             file_path: 
               value: !command-output "conform_scene:build_output_path:full_path"
               hide: true
-        focus_maya:
+        focus_maya_b:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         open:
