@@ -132,7 +132,7 @@ class GetReferences(CommandBase):
         """
         pattern_match = ftpr.findAllFilesForPattern(str(file_path), None)
         if len(pattern_match) > 0:
-            file_path = pattern_match[0]
+            file_path = pathlib.Path(str(pattern_match[0]))
 
         return find_sequence_from_path(file_path)
 
@@ -176,7 +176,7 @@ class GetReferences(CommandBase):
                 continue
 
             # Skip the references that are already conformed
-            if all(is_valid_pipeline_path(path) for path in file_paths):
+            if all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
                 continue
 
             # Skip the custom extensions provided
@@ -194,7 +194,7 @@ class GetReferences(CommandBase):
         )
 
         for _, file_path in references:
-            message += f"- {' '.join([str(f) for f in file_path])}\n"
+            message += f"- {file_path}\n"
 
         message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
         info_parameter = ParameterBuffer(
@@ -207,9 +207,15 @@ class GetReferences(CommandBase):
         if references:
             await self.prompt_user(action_query, {"info": info_parameter})
 
+        reference_attributes = [ref[0] for ref in references]
+        reference_file_paths = [
+            list(pathlib.Path(str(path)) for path in file_paths[1])
+            for file_paths in references
+        ]
+
         return {
-            "attributes": [ref[0] for ref in references],
-            "file_paths": [pathlib.Path(str(ref[1])) for ref in references],
+            "attributes": reference_attributes,
+            "file_paths": reference_file_paths,
         }
 
     async def setup(
