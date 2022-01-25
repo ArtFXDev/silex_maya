@@ -1,6 +1,6 @@
 from typing import Callable
-from maya import utils
 
+from maya import utils
 from silex_client.utils.thread import ExecutionInThread
 
 
@@ -11,4 +11,3 @@ class MayaExecutionInMainThread(ExecutionInThread):
 
 
 execute_in_main_thread = MayaExecutionInMainThread()
-

@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 
 from maya import cmds, mel
 from silex_client.action.command_base import CommandBase
+
 from silex_maya.utils import utils
 
 # Forward references

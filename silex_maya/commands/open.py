@@ -1,17 +1,20 @@
 from __future__ import annotations
+
+import logging
+import pathlib
 import typing
 from typing import Any, Dict
 
-import pathlib
-from silex_maya.utils import utils
 from silex_client.action.command_base import CommandBase
-import logging
+
+from silex_maya.utils import utils
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import os
+
 from maya import cmds
 
 

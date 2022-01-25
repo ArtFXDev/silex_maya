@@ -1,7 +1,7 @@
 import re
-from maya import cmds
-
 from typing import List
+
+from maya import cmds
 
 
 def rename_duplicates_nodes(node_filters: List[re.Pattern]) -> List[str]:

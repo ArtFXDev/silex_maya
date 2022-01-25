@@ -1,27 +1,28 @@
 from __future__ import annotations
 
-import fileseq
+import logging
 import pathlib
 import typing
-import logging
-from typing import Any, Dict, Tuple, List
+from typing import Any, Dict, List, Tuple
 
+import fileseq
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
-from silex_client.utils.parameter_types import TextParameterMeta, ListParameterMeta
 from silex_client.utils.files import (
-    is_valid_pipeline_path,
     find_sequence_from_path,
+    is_valid_pipeline_path,
     sequence_exists,
 )
+from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
+
 from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from maya import cmds
 import maya.app.general.fileTexturePathResolver as ftpr
+from maya import cmds
 
 
 class GetReferences(CommandBase):

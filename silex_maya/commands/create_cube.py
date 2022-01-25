@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import asyncio
+import logging
 import typing
-import logging 
 from typing import Any, Dict
 
 from maya import cmds
-
 from silex_client.action.command_base import CommandBase
+
 from silex_maya.utils import utils
 
 # Forward references
@@ -21,7 +22,10 @@ class CreateCube(CommandBase):
 
     @CommandBase.conform_command()
     async def __call__(
-        self, parameters: Dict[str, Any], action_query: ActionQuery, logger: logging.Logger
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
     ):
         # Create the selected node
         cube_future = await utils.wrapped_execute(action_query, cmds.polyCube)

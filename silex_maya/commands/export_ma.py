@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
+
 from silex_maya.utils import utils
 
 # Forward references
@@ -14,10 +15,10 @@ if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
 import logging
-import gazu.files
 import os
 import pathlib
 
+import gazu.files
 import maya.cmds as cmds
 
 
@@ -77,12 +78,16 @@ class ExportMa(CommandBase):
         logger: logging.Logger,
     ):
 
-        directory: pathlib.Path = parameters["directory"] # Directory parameter is temp directory
+        directory: pathlib.Path = parameters[
+            "directory"
+        ]  # Directory parameter is temp directory
         file_name: pathlib.Path = parameters["file_name"]
         full_scene: bool = False
 
         extension = await gazu.files.get_output_type_by_name("ma")
-        export_path: pathlib.Path = (directory / file_name).with_suffix(f".{extension['short_name']}")
+        export_path: pathlib.Path = (directory / file_name).with_suffix(
+            f".{extension['short_name']}"
+        )
 
         # Export the selection in ma
         future: Future = await utils.wrapped_execute(action_query, cmds.ls, sl=1)
@@ -115,14 +120,14 @@ class ExportMa(CommandBase):
         # Warning message
         if "info" in parameters:
             if parameters.get("full_scene", False):
-                self.command_buffer.parameters["info"].type = TextParameterMeta(
-                    "info"
-                )
+                self.command_buffer.parameters["info"].type = TextParameterMeta("info")
                 self.command_buffer.parameters[
                     "info"
                 ].value = "No selection detected -> Please select something or publish full scene"
             else:
-                self.command_buffer.parameters["info"].type = TextParameterMeta("warning")
+                self.command_buffer.parameters["info"].type = TextParameterMeta(
+                    "warning"
+                )
                 self.command_buffer.parameters[
                     "info"
                 ].value = "Select something to publish"

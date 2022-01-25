@@ -1,11 +1,12 @@
 from __future__ import annotations
-import typing
+
 import logging
+import typing
 from typing import Any, Dict
 
 from maya import cmds
-
 from silex_client.action.command_base import CommandBase
+
 from silex_maya.utils import utils
 
 # Forward references
