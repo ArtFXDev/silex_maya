@@ -158,20 +158,23 @@ class GetReferences(CommandBase):
 
             # Make sure the file path leads to a reachable file
             skip = False
-            while not sequence_exists(file_paths) and not skip_all:
+            while not sequence_exists(file_paths):
+                if skip_all:
+                    skip = True
+                    break
                 logger.warning(
                     "Could not reach the file(s) %s at %s", file_paths, attribute
                 )
                 file_path, skip, skip_all = await self._prompt_new_path(
                     action_query, file_path, attribute
                 )
+                if skip or file_path is None or skip_all:
+                    break
                 file_paths = await execute_in_main_thread(
                     self._get_reference_sequence, file_path
                 )
-                if skip or file_path is None or skip_all:
-                    break
             # The user can decide to skip the references that are not reachable
-            if skip or file_path is None or skip_all:
+            if skip or file_path is None:
                 logger.info("Skipping the reference at %s", attribute)
                 continue
 

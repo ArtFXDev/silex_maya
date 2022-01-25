@@ -3,7 +3,7 @@ import logging
 import pathlib
 import re
 import typing
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import fileseq
 from silex_client.action.command_base import CommandBase
@@ -65,28 +65,22 @@ class SetReferences(CommandBase):
         )
         return ".".join([node_name, attrib_name])
 
-    def _set_reference(self, attribute: str, value: Union[fileseq.FileSequence]) -> str:
-        """
-        Set the given reference to the given value, after checking the type of reference
-        This handles the case of file sequences syntac like #### or <frame01>
-        """
-        # Get the real value to set
-        reference_value = str(pathlib.Path(str(value)))
-        if isinstance(value, fileseq.FileSequence):
-            previous_value = cmds.getAttr(attribute)
-            REGEX_MATCH = [
-                re.compile(r"^.+\W(\<.+\>)\W.+$"),  # Matches V-ray's <Whatever> syntax
-                re.compile(r"^.+[^\w#](#+)\W.+$"),  # Matches V-ray's ####  syntax
-            ]
-            reference_value = format_sequence_string(value, previous_value, REGEX_MATCH)
-
+    def _set_reference(self, attribute: str, value: fileseq.FileSequence) -> str:
         # If the attribute is a maya reference
         if cmds.nodeType(attribute) == "reference":
+            reference_value = str(pathlib.Path(str(value.index(0))))
             cmds.file(reference_value, loadReference=attribute)
             return reference_value
         # If the attribute is from an other referenced scene
         if cmds.referenceQuery(attribute, isNodeReferenced=True):
             return ""
+
+        previous_value = cmds.getAttr(attribute)
+        REGEX_MATCH = [
+            re.compile(r"^.+\W(\<.+\>)\W.+$"),  # Matches V-ray's <Whatever> syntax
+            re.compile(r"^.+[^\w#](#+)\W.+$"),  # Matches V-ray's ####  syntax
+        ]
+        reference_value = format_sequence_string(value, previous_value, REGEX_MATCH)
 
         # If it is just a file node or a texture...
         split_attributes = attribute.split(".")
@@ -123,8 +117,9 @@ class SetReferences(CommandBase):
         # Execute the function in the main thread
         new_values = []
         for attribute, value in zip(attributes, values):
-            if isinstance(value, list):
-                value = fileseq.findSequencesInList(value)[0]
+            if not isinstance(value, list):
+                value = [value]
+            value = fileseq.findSequencesInList(value)[0]
 
             attribute = await execute_in_main_thread(self._get_attribute, attribute)
             new_value = await execute_in_main_thread(
