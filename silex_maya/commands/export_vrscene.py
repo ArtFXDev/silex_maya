@@ -22,6 +22,7 @@ import gazu.files
 import os
 import pathlib
 import subprocess
+import logging
 
 import gazu.files
 from maya import cmds
