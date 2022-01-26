@@ -11,7 +11,7 @@ ass:
           label: "Get referenced files"
           path: "silex_maya.commands.get_references.GetReferences"
           parameters:
-            filters:
+            excluded_extensions:
               - ".obj"
               - ".fbx"
               - ".abc"
