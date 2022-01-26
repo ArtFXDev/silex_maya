@@ -103,7 +103,7 @@ class ExportAss(CommandBase):
         frame_range: fileseq.FrameSet = parameters['frame_range']
 
         # Export to a ass sequence for each frame (in an awsome, brand new temporary directory)
-        await thread_maya.execute_in_main_thread(self._export_sequence,logger, output_path_without_extension, frame_range, selected_render_layers)
+        await thread_maya.execute_in_main_thread(self._export_sequence, output_path_without_extension, frame_range, selected_render_layers)
 
         return directory
 
