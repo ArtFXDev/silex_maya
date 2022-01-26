@@ -19,10 +19,8 @@ from  maya. app.renderSetup.model import renderSetup
 import contextlib
 import fileseq
 import pathlib
-import subprocess
-
+import logging
 import fileseq
-import gazu.files
 from maya import cmds
 
 
