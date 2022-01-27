@@ -56,7 +56,7 @@ vrscene:
           parameters:
             plugin_name: "vrayformaya"
         export_vrscene:
-          label: "Export in vrscene"
+          label: "Export to vrscene"
           path: "silex_maya.commands.export_vrscene.ExportVrscene"
           ask_user: true
           parameters:
