@@ -70,12 +70,16 @@ class ExportABC(CommandBase):
             # Check selected root
             if obj is None:
                 raise Exception("ERROR: No root found")
-            cmd = f"-dataFormat ogawa {'-uv' if uv_write else ''} "\
-            f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''} "\
-            f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}"
-            logger.info(cmd)
-            cmds.AbcExport(j=cmd)
-            logger.info(cmd)
+            cmd = CommandBuilder(delimiter=" ")
+            cmd.param("dataFormat", "ogawa")
+            cmd.param("uv", condition=uv_write)
+            cmd.param("wv", condition=write_visibility)
+            cmd.param("ws", condition=world_space)
+            cmd.param("wc", condition=write_creases)
+            cmd.param("root", obj)
+            cmd.param("frameRange", [start, end])
+            cmd.param("file", path)
+            cmds.AbcExport(j=str(cmd))
 
     @CommandBase.conform_command()
     async def __call__(
