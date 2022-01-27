@@ -21,7 +21,6 @@ import fileseq
 import pathlib
 import logging
 import fileseq
-from maya import cmds
 
 
 class ExportAss(CommandBase):
@@ -54,6 +53,20 @@ class ExportAss(CommandBase):
         },
     }
 
+
+    async def setup(
+        self,
+        parameters: Dict[str, Any],
+        action_query: ActionQuery,
+        logger: logging.Logger,
+    ):
+
+        # Add render layers to parameters
+        if 'render_layers' in parameters:
+            render_layers: List[Any] = await thread_maya.execute_in_main_thread( renderSetup.instance().getRenderLayers )
+            selection_list: List[str] = ['masterLayer'] + [layer.name() for layer in render_layers]
+            self.command_buffer.parameters["render_layers"].type = MultipleSelectParameterMeta(*selection_list)
+
     @contextlib.contextmanager
     def _maintained_render_layer(self):
         """Create a context"""
@@ -63,14 +76,13 @@ class ExportAss(CommandBase):
         finally:
             renderSetup.instance().switchToLayer(previous_rs)
 
-    def _export_sequence(self, path: pathlib.Path, frame_range: fileseq.FrameSet, selected_render_layers:  List[str]):
+    def _export_sequence(self, directory: pathlib.Path, file_name: pathlib.Path, frame_range: fileseq.FrameSet, selected_render_layers:  List[str]):
         """Export ass for each frame and each render layers"""
-
 
         frames_list = list(frame_range)
  
         # Each render layer is exported to a different directory
-        output_path = path.parents[0] / '<RenderLayer>' / f'{path.stem}_<RenderLayer>'
+        output_path = directory / '<RenderLayer>' / f'{file_name}_<RenderLayer>'
 
         # We use a context to switch between layers so the user can still work in his scene
         with self._maintained_render_layer():
@@ -97,7 +109,6 @@ class ExportAss(CommandBase):
                     renderSetup.instance().switchToLayer(layer)
                     cmds.arnoldExportAss(asciiAss=1, sf=frame, ef=frame, f=output_path)
 
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -107,27 +118,14 @@ class ExportAss(CommandBase):
     ):
     
         file_name: pathlib.Path = parameters["file_name"]
-        directory: pathlib.Path = parameters["directory"] / file_name  # The directory parameter is temp directory
-        output_path_without_extension = (directory / file_name)
+        directory: pathlib.Path = parameters["directory"]  # The directory parameter is temp directory
+        # output_path_without_extension = (directory / file_name)
 
         selected_render_layers: List[str] = parameters['render_layers']
         frame_range: fileseq.FrameSet = parameters['frame_range']
 
         # Export to a ass sequence for each frame (in an awsome, brand new temporary directory)
-        await thread_maya.execute_in_main_thread(self._export_sequence, output_path_without_extension, frame_range, selected_render_layers)
+        await thread_maya.execute_in_main_thread(self._export_sequence, directory, file_name, frame_range, selected_render_layers)
 
 
         return directory
-
-    async def setup(
-        self,
-        parameters: Dict[str, Any],
-        action_query: ActionQuery,
-        logger: logging.Logger,
-    ):
-
-        # Add render layers to parameters
-        if 'render_layers' in parameters:
-            render_layers: List[Any] = await thread_maya.execute_in_main_thread( renderSetup.instance().getRenderLayers )
-            selection_list: List[str] = ['masterLayer'] + [layer.name() for layer in render_layers]
-            self.command_buffer.parameters["render_layers"].type = MultipleSelectParameterMeta(*selection_list)
