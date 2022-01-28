@@ -4,10 +4,13 @@ import os
 import pathlib
 import logging
 import typing
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import IntArrayParameterMeta
+from silex_client.utils.parameter_types import (
+    IntArrayParameterMeta,
+    MultipleSelectParameterMeta,
+)
 from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
@@ -43,53 +46,41 @@ class ExportABC(CommandBase):
             "type": IntArrayParameterMeta(2),
             "value": [0, 0],
         },
-        "write_visibility": {"label": "Write Visibility", "type": bool, "value": False},
-        "world_space": {"label": "World Space", "type": bool, "value": False},
-        "uv_write": {"label": "UV Write", "type": bool, "value": False},
-        "write_creases": {"label": "Write Creases", "type": bool, "value": False},
+        "selection": {
+            "label": "Export selection",
+            "type": bool,
+            "value": True,
+        },
+        "options": {
+            "label": "Options",
+            "type": MultipleSelectParameterMeta(
+                **{
+                    "Write Visibility": "-wv",
+                    "World Space": "-ws",
+                    "UV Write": "-uv",
+                    "UV Sets Write": "-wuvs",
+                    "Write Creases": "-wc",
+                    "Strip Namespaces": "-sn",
+                    "Write Visibility": "-wv",
+                }
+            ),
+            "value": [],
+        },
     }
 
-    # Get select objects
-    def select_objects(self):
-        """Get selection in open scene"""
-
-        # Get current selection
-        selected = cmds.ls(sl=True, long=True) or []
-        selected.sort(key=len, reverse=True)  # reverse
-        return selected
-
-    # Export abc method for wrapped execute
     def export_abc(
-        self,
-        start: int,
-        end: int,
-        path: str,
-        obj,
-        write_visibility: bool,
-        world_space: bool,
-        uv_write: bool,
-        write_creases: bool,
-        logger,
-    ) -> None:
-        """Export in alembic"""
-
-        # Authorized type
-        authorized_type = ["transform", "mesh", "camera"]
-
-        type: str = cmds.objectType(obj)
-        if type in authorized_type:
-
-            # Check selected root
-            if obj is None:
-                raise Exception("ERROR: No root found")
-            cmd = (
-                f"-dataFormat ogawa {'-uv' if uv_write else ''} "
-                f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''} "
-                f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}"
-            )
-            logger.info(cmd)
-            cmds.AbcExport(j=cmd)
-            logger.info(cmd)
+        self, start: int, end: int, path: str, roots: List[str], options: List[str]
+    ) -> str:
+        """
+        Build and execute the abc command with the given options
+        """
+        joined_roots = "-root " + " -root ".join(roots)
+        cmd = (
+            f"-dataFormat ogawa {joined_roots if roots else ''} -frameRange {start} {end} -file {path} "
+            + " ".join(options)
+        )
+        cmds.AbcExport(j=cmd)
+        return cmd
 
     @CommandBase.conform_command()
     async def __call__(
@@ -99,21 +90,13 @@ class ExportABC(CommandBase):
         logger: logging.Logger,
     ):
         # Get the output path and range variable
-        directory: pathlib.Path = parameters["directory"]  # Directory is temp directory
+        directory: pathlib.Path = parameters["directory"]
         file_name: pathlib.Path = parameters["file_name"]
         start_frame: int = parameters["frame_range"][0]
         end_frame: int = parameters["frame_range"][1]
         is_timeline: bool = parameters["timeline_as_framerange"]
-        write_visibility: bool = parameters["write_visibility"]
-        world_space: bool = parameters["world_space"]
-        uv_write: bool = parameters["uv_write"]
-        write_creases: bool = parameters["write_creases"]
-
-        # List of path to return
-        to_return_paths = []
-
-        # Get selected objects
-        selected = await execute_in_main_thread(self.select_objects)
+        selection: bool = parameters["selection"]
+        options: List[str] = parameters["options"]
 
         # Set frame range
         if is_timeline:
@@ -123,33 +106,23 @@ class ExportABC(CommandBase):
         # Create temps directory
         os.makedirs(directory, exist_ok=True)
 
-        for obj in selected:
+        # Compute path
+        extension: dict = await gazu.files.get_output_type_by_name("abc")
+        export_path: pathlib.Path = (directory / f"{file_name}").with_suffix(
+            f".{extension['short_name']}"
+        )
 
-            # compute path
-            name: str = obj.split("|")[-1]
-            extension: str = await gazu.files.get_output_type_by_name("abc")
-            export_path: pathlib.Path = (directory / f"{file_name}_{name}").with_suffix(
-                f".{extension['short_name']}"
-            )
-            logger.info(name)
-            # Add path to return list
-            to_return_paths.append(str(export_path))
+        roots = []
+        if selection:
+            roots = await execute_in_main_thread(cmds.ls, sl=True, l=True)
 
-            # Export in alambic
-            await execute_in_main_thread(
-                self.export_abc,
-                start_frame,
-                end_frame,
-                export_path,
-                name,
-                write_visibility,
-                world_space,
-                uv_write,
-                write_creases,
-                logger,
-            )
+        # Export in alembic
+        cmd = await execute_in_main_thread(
+            self.export_abc, start_frame, end_frame, export_path, roots, options
+        )
+        logger.info("Exported Alembic with command %s", cmd)
 
-        return to_return_paths
+        return export_path
 
     async def setup(
         self,
