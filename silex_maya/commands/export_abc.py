@@ -69,13 +69,14 @@ class ExportABC(CommandBase):
     }
 
     def export_abc(
-        self, start: int, end: int, path: str, selection: bool, options: List[str]
+        self, start: int, end: int, path: str, roots: List[str], options: List[str]
     ) -> str:
         """
         Build and execute the abc command with the given options
         """
+        joined_roots = "-root " + " -root ".join(roots)
         cmd = (
-            f"-dataFormat ogawa {'-sl' if selection else ''} -frameRange {start} {end} -file {path} "
+            f"-dataFormat ogawa {joined_roots if roots else ''} -frameRange {start} {end} -file {path} "
             + " ".join(options)
         )
         cmds.AbcExport(j=cmd)
@@ -111,9 +112,13 @@ class ExportABC(CommandBase):
             f".{extension['short_name']}"
         )
 
+        roots = []
+        if selection:
+            roots = await execute_in_main_thread(cmds.ls, sl=True, l=True)
+
         # Export in alembic
         cmd = await execute_in_main_thread(
-            self.export_abc, start_frame, end_frame, export_path, selection, options
+            self.export_abc, start_frame, end_frame, export_path, roots, options
         )
         logger.info("Exported Alembic with command %s", cmd)
 
