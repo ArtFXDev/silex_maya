@@ -64,7 +64,6 @@ class ExportABC(CommandBase):
         start: int,
         end: int,
         path: str,
-        obj,
         write_visibility: bool,
         world_space: bool,
         uv_write: bool,
@@ -73,23 +72,14 @@ class ExportABC(CommandBase):
     ) -> None:
         """Export in alembic"""
 
-        # Authorized type
-        authorized_type = ["transform", "mesh", "camera"]
-
-        type: str = cmds.objectType(obj)
-        if type in authorized_type:
-
-            # Check selected root
-            if obj is None:
-                raise Exception("ERROR: No root found")
-            cmd = (
-                f"-dataFormat ogawa {'-uv' if uv_write else ''} "
-                f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''} "
-                f"{'-wc' if write_creases else ''} -root {obj} -frameRange {start} {end} -file {path}"
-            )
-            logger.info(cmd)
-            cmds.AbcExport(j=cmd)
-            logger.info(cmd)
+        # Check selected root
+        cmd = (
+            f"-dataFormat ogawa -sl {'-uv' if uv_write else ''} "
+            f"{'-wv' if write_visibility else ''} {'-ws' if world_space else ''} "
+            f"{'-wc' if write_creases else ''} -frameRange {start} {end} -file {path}"
+        )
+        logger.info(cmd)
+        cmds.AbcExport(j=cmd)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -112,9 +102,6 @@ class ExportABC(CommandBase):
         # List of path to return
         to_return_paths = []
 
-        # Get selected objects
-        selected = await execute_in_main_thread(self.select_objects)
-
         # Set frame range
         if is_timeline:
             start_frame: int = cmds.playbackOptions(minTime=True, query=True)
@@ -123,31 +110,26 @@ class ExportABC(CommandBase):
         # Create temps directory
         os.makedirs(directory, exist_ok=True)
 
-        for obj in selected:
+        # compute path
+        extension: dict = await gazu.files.get_output_type_by_name("abc")
+        export_path: pathlib.Path = (directory / f"{file_name}").with_suffix(
+            f".{extension['short_name']}"
+        )
+        # Add path to return list
+        to_return_paths.append(str(export_path))
 
-            # compute path
-            name: str = obj.split("|")[-1]
-            extension: str = await gazu.files.get_output_type_by_name("abc")
-            export_path: pathlib.Path = (directory / f"{file_name}_{name}").with_suffix(
-                f".{extension['short_name']}"
-            )
-            logger.info(name)
-            # Add path to return list
-            to_return_paths.append(str(export_path))
-
-            # Export in alambic
-            await execute_in_main_thread(
-                self.export_abc,
-                start_frame,
-                end_frame,
-                export_path,
-                name,
-                write_visibility,
-                world_space,
-                uv_write,
-                write_creases,
-                logger,
-            )
+        # Export in alambic
+        await execute_in_main_thread(
+            self.export_abc,
+            start_frame,
+            end_frame,
+            export_path,
+            write_visibility,
+            world_space,
+            uv_write,
+            write_creases,
+            logger,
+        )
 
         return to_return_paths
 
