@@ -124,6 +124,8 @@ class ExportAss(CommandBase):
         selected_render_layers: List[str] = parameters['render_layers']
         frame_range: fileseq.FrameSet = parameters['frame_range']
 
+        import os
+        os.makedirs(directory / 'Aavide')
         # Export to a ass sequence for each frame (in an awsome, brand new temporary directory)
         await thread_maya.execute_in_main_thread(self._export_sequence, directory, file_name, frame_range, selected_render_layers)
 
