@@ -14,7 +14,6 @@ from silex_client.utils.files import (
     sequence_exists,
 )
 from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
-
 from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
@@ -99,7 +98,9 @@ class GetReferences(CommandBase):
 
         return True
 
-    def _get_scene_references(self) -> List[Tuple[str, pathlib.Path]]:
+    def _get_scene_references(
+        self, logger: logging.Logger
+    ) -> List[Tuple[str, pathlib.Path]]:
         """
         List all the references in the current scene
         Return the reference node/attribute and the file path
@@ -109,9 +110,14 @@ class GetReferences(CommandBase):
 
         # Get the referenced files from the file path editor
         for attribute in cmds.filePathEditor(q=True, lf="", ao=True) or []:
-            # Skip the nodes that are from an other referenced scene
-            if cmds.referenceQuery(attribute, isNodeReferenced=True):
+            try:
+                # Skip the nodes that are from an other referenced scene
+                if cmds.referenceQuery(attribute, isNodeReferenced=True):
+                    continue
+            except RuntimeError:
+                logger.warning("Attribute %s is not queryable", attribute)
                 continue
+
             # If the attribute is a maya/alembic/... reference
             if cmds.nodeType(attribute) == "reference":
                 file_path = cmds.referenceQuery(
@@ -119,8 +125,14 @@ class GetReferences(CommandBase):
                 )
                 referenced_files.append((attribute, pathlib.Path(file_path)))
                 continue
+
             # Otherwise, just get the attribute for simple stuff like file nodes
             file_path = cmds.getAttr(attribute)
+
+            # Skip references that have an empty file_path
+            if len(file_path) == 0:
+                continue
+
             referenced_files.append((attribute, pathlib.Path(file_path)))
 
         # Make sure to not have duplicates in the references
@@ -148,7 +160,10 @@ class GetReferences(CommandBase):
 
         # Each referenced file must be verified
         references: List[Tuple[str, fileseq.FileSequence]] = []
-        referenced_files = await execute_in_main_thread(self._get_scene_references)
+
+        referenced_files = await execute_in_main_thread(
+            self._get_scene_references, logger
+        )
 
         skip_all = False
         for attribute, file_path in referenced_files:
@@ -156,6 +171,13 @@ class GetReferences(CommandBase):
             file_paths = await execute_in_main_thread(
                 self._get_reference_sequence, file_path
             )
+
+            # Skip the custom extensions provided
+            if file_paths.extension() in excluded_extensions:
+                logger.warning(
+                    "Excluded attribute %s pointing to %s", attribute, file_path
+                )
+                continue
 
             # Make sure the file path leads to a reachable file
             skip = False
@@ -174,6 +196,7 @@ class GetReferences(CommandBase):
                 file_paths = await execute_in_main_thread(
                     self._get_reference_sequence, file_path
                 )
+
             # The user can decide to skip the references that are not reachable
             if skip or file_path is None:
                 logger.info("Skipping the reference at %s", attribute)
@@ -181,10 +204,6 @@ class GetReferences(CommandBase):
 
             # Skip the references that are already conformed
             if all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
-                continue
-
-            # Skip the custom extensions provided
-            if file_paths.extension() in excluded_extensions:
                 continue
 
             # Append to the verified path
@@ -197,7 +216,7 @@ class GetReferences(CommandBase):
             f"The scene\n{current_scene}\nis referencing non conformed file(s) :\n\n"
         )
 
-        for _, file_path in references:
+        for attribute, file_path in references:
             message += f"- {file_path}\n"
 
         message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"

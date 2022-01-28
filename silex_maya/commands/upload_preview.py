@@ -21,6 +21,11 @@ class UploadPreview(CommandBase):
 
     parameters: CommandParameters = {
         "preview_path": {"label": "Preview path", "type": pathlib.Path, "value": None},
+        "upload_preview": {
+            "label": "Upload preview for the task thumbnail",
+            "type": bool,
+            "value": True,
+        },
     }
 
     required_metadata: List[str] = ["task_id"]
@@ -32,6 +37,8 @@ class UploadPreview(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        if not parameters["upload_preview"]:
+            return
 
         if not os.path.isfile(parameters["preview_path"]):
             logger.error(

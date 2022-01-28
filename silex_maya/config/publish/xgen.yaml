@@ -1,0 +1,20 @@
+xgen: !inherit
+  parent: ".ma"
+
+  steps:
+    check_references:
+      commands:
+        get_references:
+          parameters:
+            excluded_extensions:
+              - ".xgen"
+              - ".iff"
+
+    export:
+      commands:
+        export_xgen:
+          label: "Export the XGen project"
+          path: "silex_maya.commands.export_xgen.ExportXgen"
+          parameters:
+            destination:
+              value: !command-output "setup:build_output_path:directory"
