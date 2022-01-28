@@ -10,19 +10,16 @@ from silex_client.utils.parameter_types import (
     MultipleSelectParameterMeta,
     TextParameterMeta,
 )
-
 from silex_maya.utils import thread as thread_maya
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from maya import cmds
-import gazu.files
+import logging
 import os
 import pathlib
 import subprocess
-import logging
 
 import gazu.files
 from maya import cmds
@@ -49,8 +46,7 @@ class ExportVrscene(CommandBase):
         "render_layers": {
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
-            "value": ['defaultRenderLayer'],
-
+            "value": ["defaultRenderLayer"],
         },
     }
 
@@ -94,9 +90,10 @@ class ExportVrscene(CommandBase):
                 .param("rl", layer)
                 .param("exportFileName", str(output_path))
                 .param("noRender")
+                .value(render_scene)
             )
 
-            batch_cmd.set_last_param(render_scene)
+            logger.error(batch_cmd.as_argv())
 
             await thread_client.execute_in_thread(
                 subprocess.call, batch_cmd.as_argv(), shell=True
