@@ -64,7 +64,7 @@ class ExportABC(CommandBase):
                     "Write Visibility": "-wv",
                 }
             ),
-            "value": ["-uv", "-wuvs"],
+            "value": [],
         },
     }
 
