@@ -82,7 +82,7 @@ class ExportXgen(CommandBase):
         # Copy the subfolders
         for sub_item in subdirs_to_keep:
             dest_path = maya_project_destination / sub_item.name
-            logger.error("Copying %s to %s", sub_item, dest_path)
+            logger.info("Copying %s to %s", sub_item, dest_path)
             if os.path.isdir(sub_item):
                 shutil.copytree(sub_item, dest_path)
             else:
