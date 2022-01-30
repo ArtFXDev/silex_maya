@@ -93,7 +93,7 @@ class ExportVrscene(CommandBase):
                 .value(render_scene)
             )
 
-            logger.error(batch_cmd.as_argv())
+            logger.info(batch_cmd.as_argv())
 
             await thread_client.execute_in_thread(
                 subprocess.call, batch_cmd.as_argv(), shell=True
