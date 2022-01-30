@@ -1,11 +1,57 @@
 ass:
   steps:
+    check_references:
+      label: "Check references"
+      index: 30
+      commands:
+        cleanup:
+          label: "Cleanup scene"
+          path: "silex_maya.commands.cleanup_scene.CleanupScene"
+        get_references:
+          label: "Get referenced files"
+          path: "silex_maya.commands.get_references.GetReferences"
+          parameters:
+            excluded_extensions:
+              - ".obj"
+              - ".fbx"
+              - ".abc"
+        conform_references:
+          label: "Conform references found"
+          path: "silex_client.commands.iterate_action.IterateAction"
+          parameters:
+            values:
+              value: !command-output "check_references:get_references:file_paths"
+              hide: true
+            actions:
+              - "conform"
+            categories:
+              - "action"
+            parameter: "setup:get_conform_output:file_paths"
+            label_key: "file_paths"
+            output: "setup:append_conform_actions"
+
+    conform_references:
+      label: "Repath references"
+      index: 40
+      commands:
+        repath_attributes:
+          label: "Repath attributes"
+          path: "silex_maya.commands.set_references.SetReferences"
+          tooltip: "Set the new path on the attributes"
+          parameters:
+            attributes:
+              value: !command-output "check_references:get_references:attributes"
+              hide: true
+            values:
+              value: !command-output "check_references:conform_references"
+              hide: true
+
     export:
       label: "Export"
       index: 50
       commands:
         export_ass:
-          label: "Export in ass"
+          label: "Export to ass"
           path: "silex_maya.commands.export_ass.ExportAss"
           ask_user: true
           parameters:
@@ -27,10 +73,10 @@ ass:
             dst:
               value: !command-output "setup:build_output_path:directory"
               hide: true
-        # remove:
-        #   label: "Remove temp directory"
-        #   path: "silex_client.commands.remove.Remove"
-        #   parameters:
-        #     file_path:
-        #       value: !command-output "setup:build_output_path:temp_directory"
-        #       hide: true
+        remove:
+          label: "Remove temp directory"
+          path: "silex_client.commands.remove.Remove"
+          parameters:
+            file_path:
+              value: !command-output "setup:build_output_path:temp_directory"
+              hide: true

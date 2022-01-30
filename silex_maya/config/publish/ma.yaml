@@ -55,6 +55,7 @@ ma:
             file_name:
               value: !command-output "setup:build_output_path:file_name"
               hide: true
+
     move:
       label: "Move"
       index: 60
@@ -88,6 +89,7 @@ ma:
         upload_preview:
           label: "Upload preview"
           path: "silex_maya.commands.upload_preview.UploadPreview"
+          ask_user: true
           parameters:
             preview_path:
               value: !command-output "preview:capture_preview:thumbnail"

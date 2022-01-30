@@ -11,14 +11,14 @@ ma:
       label: "Conform Maya scene's references"
       index: 20
       commands:
-        focus_maya:
+        focus_maya_a:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         open:
           label: "Open scene to conform"
           path: "silex_maya.commands.open.Open"
           parameters:
-            file_path: 
+            file_path:
               value: !command-output "input:input:file_paths"
               hide: true
             save: True
@@ -32,7 +32,7 @@ ma:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: 
+            values:
               value: !command-output "conform_references:get_references:file_paths"
               hide: true
             actions:
@@ -59,7 +59,7 @@ ma:
           path: "silex_client.commands.get_stored_value.GetStoredValue"
           parameters:
             key: "fast_conform_enabled"
-            key_suffix: 
+            key_suffix:
               value: !command-output "input:input:file_paths"
               hide: true
             default: false
@@ -73,16 +73,16 @@ ma:
             fast_conform: !command-output "conform_scene:get_fast_conform_cache:value"
             use_current_context: false
             create_temp_dir: false
-            frame_set: 
+            frame_set:
               value: !command-output "input:input:frame_set"
               hide: true
             output_type:
               value: "ma"
               hide: true
-            files: 
+            files:
               value: !command-output "input:input:file_paths"
               hide: true
-            padding: 
+            padding:
               value: !command-output "input:input:padding"
               hide: true
           ask_user: true
@@ -107,31 +107,31 @@ ma:
           path: "silex_maya.commands.set_references.SetReferences"
           tooltip: "Set the new path on the attributes"
           parameters:
-            attributes: 
+            attributes:
               value: !command-output "conform_references:get_references:attributes"
               hide: true
-            values: 
+            values:
               value: !command-output "conform_references:conform_references"
               hide: true
-        
-        focus_maya:
+
+        focus_maya_a:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
           parameters:
-            file_path: 
+            file_path:
               value: !command-output "conform_scene:build_output_path:full_path"
               hide: true
-        focus_maya:
+        focus_maya_b:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         open:
           label: "Open back the original scene"
           path: "silex_maya.commands.open.Open"
           parameters:
-            file_path: 
+            file_path:
               value: !command-output "conform_references:open:old_path"
               hide: true
             save: False
@@ -147,8 +147,9 @@ ma:
         upload_preview:
           label: "Upload preview"
           path: "silex_maya.commands.upload_preview.UploadPreview"
+          ask_user: true
           parameters:
-            preview_path: 
+            preview_path:
               value: !command-output "preview:capture_preview:thumbnail"
               hide: true
 

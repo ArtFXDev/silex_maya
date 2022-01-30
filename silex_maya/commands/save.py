@@ -5,7 +5,7 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
-from silex_maya.utils import utils
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -41,6 +41,6 @@ class Save(CommandBase):
 
         logger.info("Saving scene to %s", file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        await utils.wrapped_execute(action_query, save, file_path=file_path)
+        await execute_in_main_thread(save, file_path=file_path)
 
         return {"new_path": file_path}
