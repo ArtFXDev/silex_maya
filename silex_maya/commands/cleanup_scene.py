@@ -9,8 +9,8 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
-from silex_maya.utils.thread import execute_in_main_thread
 from silex_maya.utils.scene import rename_duplicates_nodes
+from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
 if typing.TYPE_CHECKING:
