@@ -4,23 +4,20 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import  MultipleSelectParameterMeta
-from silex_maya.utils import thread as thread_maya 
-
-
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta
 from silex_maya.utils import thread as thread_maya
 
 # Forward references
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from maya import cmds, mel
-from  maya. app.renderSetup.model import renderSetup 
 import contextlib
-import fileseq
-import pathlib
 import logging
+import pathlib
+
 import fileseq
+from maya import cmds, mel
+from maya.app.renderSetup.model import renderSetup
 
 
 class ExportAss(CommandBase):
@@ -49,10 +46,9 @@ class ExportAss(CommandBase):
         "render_layers": {
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
-            "value": ['masterLayer'],
+            "value": ["masterLayer"],
         },
     }
-
 
     async def setup(
         self,
@@ -62,10 +58,16 @@ class ExportAss(CommandBase):
     ):
 
         # Add render layers to parameters
-        if 'render_layers' in parameters:
-            render_layers: List[Any] = await thread_maya.execute_in_main_thread( renderSetup.instance().getRenderLayers )
-            selection_list: List[str] = ['masterLayer'] + [layer.name() for layer in render_layers]
-            self.command_buffer.parameters["render_layers"].type = MultipleSelectParameterMeta(*selection_list)
+        if "render_layers" in parameters:
+            render_layers: List[Any] = await thread_maya.execute_in_main_thread(
+                renderSetup.instance().getRenderLayers
+            )
+            selection_list: List[str] = ["masterLayer"] + [
+                layer.name() for layer in render_layers
+            ]
+            self.command_buffer.parameters[
+                "render_layers"
+            ].type = MultipleSelectParameterMeta(*selection_list)
 
     @contextlib.contextmanager
     def _maintained_render_layer(self):
@@ -76,27 +78,38 @@ class ExportAss(CommandBase):
         finally:
             renderSetup.instance().switchToLayer(previous_rs)
 
-    def _export_sequence(self, directory: pathlib.Path, file_name: pathlib.Path, frame_range: fileseq.FrameSet, selected_render_layers:  List[str]):
+    def _export_sequence(
+        self,
+        directory: pathlib.Path,
+        file_name: pathlib.Path,
+        frame_range: fileseq.FrameSet,
+        selected_render_layers: List[str],
+    ):
         """Export ass for each frame and each render layers"""
 
         frames_list = list(frame_range)
- 
+
         # Each render layer is exported to a different directory
-        output_path = directory / '<RenderLayer>' / f'{file_name}_<RenderLayer>'
+        output_path = directory / "<RenderLayer>" / f"{file_name}_<RenderLayer>"
 
         # We use a context to switch between layers so the user can still work in his scene
         with self._maintained_render_layer():
-            
+
             # Get all render layer in maya
             render_layers: List[Any] = renderSetup.instance().getRenderLayers()
-            render_layers_dict: Dict[str, Any] = dict(zip([layer.name() for layer in render_layers], render_layers))
+            render_layers_dict: Dict[str, Any] = dict(
+                zip([layer.name() for layer in render_layers], render_layers)
+            )
 
-          
             # Get master layer if it has been selected in the parameters
-            if 'masterLayer' in selected_render_layers:
+            if "masterLayer" in selected_render_layers:
                 # Switch masterlayer to visible and add it to the dictionary
-                mel.eval('$tmp = $gMainProgressBar; timeField -edit -value `currentTime -query` TimeSlider|MainTimeSliderLayout|formLayout8|timeField1; renderLayerDisplayName masterLayer;')
-                render_layers_dict.update({'masterLayer': renderSetup.instance().getVisibleRenderLayer()})
+                mel.eval(
+                    "$tmp = $gMainProgressBar; timeField -edit -value `currentTime -query` TimeSlider|MainTimeSliderLayout|formLayout8|timeField1; renderLayerDisplayName masterLayer;"
+                )
+                render_layers_dict.update(
+                    {"masterLayer": renderSetup.instance().getVisibleRenderLayer()}
+                )
 
             # Each layer is exported seperatly
             for layer_name in selected_render_layers:
@@ -116,16 +129,23 @@ class ExportAss(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
-    
+
         file_name: pathlib.Path = parameters["file_name"]
-        directory: pathlib.Path = parameters["directory"]  # The directory parameter is temp directory
+        directory: pathlib.Path = parameters[
+            "directory"
+        ]  # The directory parameter is temp directory
         # output_path_without_extension = (directory / file_name)
 
-        selected_render_layers: List[str] = parameters['render_layers']
-        frame_range: fileseq.FrameSet = parameters['frame_range']
+        selected_render_layers: List[str] = parameters["render_layers"]
+        frame_range: fileseq.FrameSet = parameters["frame_range"]
 
         # Export to a ass sequence for each frame (in an awsome, brand new temporary directory)
-        await thread_maya.execute_in_main_thread(self._export_sequence, directory, file_name, frame_range, selected_render_layers)
-
+        await thread_maya.execute_in_main_thread(
+            self._export_sequence,
+            directory,
+            file_name,
+            frame_range,
+            selected_render_layers,
+        )
 
         return directory

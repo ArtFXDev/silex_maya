@@ -11,7 +11,6 @@ from maya import cmds
 from silex_client.action.command_base import CommandBase
 from silex_client.utils.files import format_sequence_string
 from silex_client.utils.parameter_types import AnyParameter, ListParameterMeta
-
 from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
