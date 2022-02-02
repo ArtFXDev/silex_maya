@@ -89,12 +89,13 @@ class CleanupScene(CommandBase):
         ]
         nodes = await execute_in_main_thread(cmds.ls)
         duplicate_nodes = [node for node in nodes if "|" in node]
-        if any(
+        regex_search = [
             regex.search(name) for regex in regex_filters for name in duplicate_nodes
-        ):
+        ]
+        if any(regex_search):
             message = f"""
             The current maya scene contains reference nodes that have duplicate names:
-            {[regex.search(name) for regex in regex_filters for name in duplicate_nodes]}
+            {[regex.string for regex in regex_search if regex is not None]}
 
             Due to an error in maya's file path editor this can cause errors in the conform
             """
