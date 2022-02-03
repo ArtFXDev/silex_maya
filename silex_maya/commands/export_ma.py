@@ -53,19 +53,21 @@ class ExportMa(CommandBase):
             )
 
             bool_parameter = ParameterBuffer(
-                type=bool, name="full_scene", label="Publish full scene", value=True
+                type=bool, name="selection", label="Publish selection", value=True
             )
 
             # Prompt the user with a label
             prompt: Dict[str, Any] = await self.prompt_user(
-                action_query, {"info": info_parameter, "full_scene": bool_parameter}
+                action_query, {"info": info_parameter, "selection": bool_parameter}
             )
 
             # Get selected objects
             selection_list: Any = await execute_in_main_thread(cmds.ls, sl=1)
 
-            if len(selection_list) or prompt["full_scene"]:
+            if len(selection_list) and prompt["selection"]:
                 return True
+            else:
+                return False
 
     @CommandBase.conform_command()
     async def __call__(
@@ -79,7 +81,7 @@ class ExportMa(CommandBase):
             "directory"
         ]  # Directory parameter is temp directory
         file_name: pathlib.Path = parameters["file_name"]
-        full_scene: bool = False
+        selection: bool = False
 
         extension = await gazu.files.get_output_type_by_name("ma")
         export_path: pathlib.Path = (directory / file_name).with_suffix(
@@ -90,16 +92,16 @@ class ExportMa(CommandBase):
         selection_list: List[str] = await execute_in_main_thread(cmds.ls, sl=1)
 
         # Prompt warning
-        if not len(selection_list):
-            full_scene = await self._prompt_warning(action_query)
+        if len(selection_list):
+            selection = await self._prompt_warning(action_query)
 
         # Export in temps directory
         os.makedirs(directory, exist_ok=True)
         await execute_in_main_thread(
             cmds.file,
             export_path,
-            es=not (full_scene),
-            ea=full_scene,
+            es=selection,
+            ea=not(selection),
             pr=True,
             typ="mayaAscii",
         )
@@ -114,15 +116,15 @@ class ExportMa(CommandBase):
     ):
         # Warning message
         if "info" in parameters:
-            if parameters.get("full_scene", False):
-                self.command_buffer.parameters["info"].type = TextParameterMeta("info")
+            if parameters['selection']:
+                self.command_buffer.parameters["info"].type = TextParameterMeta("warning")
                 self.command_buffer.parameters[
                     "info"
-                ].value = "No selection detected -> Please select something or publish full scene"
+                ].value = "You are about to export a selection, continue ?"
             else:
                 self.command_buffer.parameters["info"].type = TextParameterMeta(
-                    "warning"
+                    "info"
                 )
                 self.command_buffer.parameters[
                     "info"
-                ].value = "Select something to publish"
+                ].value = "Publish full scene (ignore selection)"
