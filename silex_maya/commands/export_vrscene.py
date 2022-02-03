@@ -71,10 +71,13 @@ class ExportVrscene(CommandBase):
         command_label = self.command_buffer.label
 
         for index, layer in enumerate(render_layers):
+
+            # Diplay feed back in front
             new_label = f"{command_label}: ({index + 1}/{len(render_layers)})"
             self.command_buffer.label = new_label
             await action_query.async_update_websocket(apply_response=False)
 
+            # the Output filename depends on the layer 
             output_name: pathlib.Path = pathlib.Path(f"{file_name}_{layer}")
             output_path: pathlib.Path = (directory / output_name).with_suffix(
                 f".{extension['short_name']}"
@@ -84,6 +87,9 @@ class ExportVrscene(CommandBase):
                 cmds.file, q=True, sn=True
             )
 
+            # Make sur vray plug-in is loaded
+            await thread_maya.execute_in_main_thread(cmds.loadPlugin,'vrayformaya')
+
             batch_cmd = (
                 CommandBuilder("C:/Maya2022/Maya2022/bin/Render.exe", delimiter=None)
                 .param("r", "vray")
@@ -92,8 +98,6 @@ class ExportVrscene(CommandBase):
                 .param("noRender")
                 .value(render_scene)
             )
-
-            logger.info(batch_cmd.as_argv())
 
             await thread_client.execute_in_thread(
                 subprocess.call, batch_cmd.as_argv(), shell=True
