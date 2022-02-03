@@ -5,11 +5,8 @@ from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import thread as thread_client
-from silex_client.utils.command import CommandBuilder
-from silex_client.utils.parameter_types import (
-    MultipleSelectParameterMeta,
-    TextParameterMeta,
-)
+from silex_client.utils import command_builder
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta
 from silex_maya.utils import thread as thread_maya
 
 # Forward references
@@ -87,11 +84,8 @@ class ExportVrscene(CommandBase):
                 cmds.file, q=True, sn=True
             )
 
-            # Make sur vray plug-in is loaded
-            await thread_maya.execute_in_main_thread(cmds.loadPlugin,'vrayformaya')
-
             batch_cmd = (
-                CommandBuilder("C:/Maya2022/Maya2022/bin/Render.exe", delimiter=None)
+                command_builder.CommandBuilder("C:/Maya2022/Maya2022/bin/Render.exe", delimiter=None)
                 .param("r", "vray")
                 .param("rl", layer)
                 .param("exportFileName", str(output_path))
@@ -104,7 +98,7 @@ class ExportVrscene(CommandBase):
             )
 
             output_files.append(output_path)
-
+        
         return output_files
 
     async def setup(
@@ -115,20 +109,6 @@ class ExportVrscene(CommandBase):
     ):
 
         # Warning message
-        if "info" in parameters:
-            if parameters.get("full_scene", False):
-                self.command_buffer.parameters["info"].type = TextParameterMeta("info")
-                self.command_buffer.parameters[
-                    "info"
-                ].value = "No selection detected -> Please select somthing or publish full scene"
-            else:
-                self.command_buffer.parameters["info"].type = TextParameterMeta(
-                    "warning"
-                )
-                self.command_buffer.parameters[
-                    "info"
-                ].value = "Select somthing to publish"
-
         render_layers: List[str] = await thread_maya.execute_in_main_thread(
             cmds.ls, typ="renderLayer"
         )

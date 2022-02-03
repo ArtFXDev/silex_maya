@@ -55,10 +55,10 @@ vrscene:
           ask_user: false
           parameters:
             plugin_name: "vrayformaya"
+
         export_vrscene:
           label: "Export to vrscene"
           path: "silex_maya.commands.export_vrscene.ExportVrscene"
-          ask_user: true
           parameters:
             directory:
               value: !command-output "setup:build_output_path:temp_directory"
@@ -66,6 +66,7 @@ vrscene:
             file_name:
               value: !command-output "setup:build_output_path:file_name"
               hide: true
+
     move:
       label: "Move"
       index: 60
