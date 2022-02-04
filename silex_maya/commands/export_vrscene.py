@@ -4,8 +4,8 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils import thread as thread_client
 from silex_client.utils import command_builder
+from silex_client.utils import thread as thread_client
 from silex_client.utils.parameter_types import MultipleSelectParameterMeta
 from silex_maya.utils import thread as thread_maya
 
@@ -74,7 +74,7 @@ class ExportVrscene(CommandBase):
             self.command_buffer.label = new_label
             await action_query.async_update_websocket(apply_response=False)
 
-            # the Output filename depends on the layer 
+            # the Output filename depends on the layer
             output_name: pathlib.Path = pathlib.Path(f"{file_name}_{layer}")
             output_path: pathlib.Path = (directory / output_name).with_suffix(
                 f".{extension['short_name']}"
@@ -85,7 +85,9 @@ class ExportVrscene(CommandBase):
             )
 
             batch_cmd = (
-                command_builder.CommandBuilder("C:/Maya2022/Maya2022/bin/Render.exe", delimiter=None)
+                command_builder.CommandBuilder(
+                    "C:/Maya2022/Maya2022/bin/Render.exe", delimiter=None
+                )
                 .param("r", "vray")
                 .param("rl", layer)
                 .param("exportFileName", str(output_path))
@@ -98,7 +100,7 @@ class ExportVrscene(CommandBase):
             )
 
             output_files.append(output_path)
-        
+
         return output_files
 
     async def setup(
@@ -112,6 +114,7 @@ class ExportVrscene(CommandBase):
         render_layers: List[str] = await thread_maya.execute_in_main_thread(
             cmds.ls, typ="renderLayer"
         )
+
         self.command_buffer.parameters[
             "render_layers"
         ].type = MultipleSelectParameterMeta(*render_layers)

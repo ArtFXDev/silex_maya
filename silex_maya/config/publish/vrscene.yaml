@@ -45,6 +45,7 @@ vrscene:
             values:
               value: !command-output "check_references:conform_references"
               hide: true
+
     export:
       label: "Export"
       index: 50
@@ -59,6 +60,7 @@ vrscene:
         export_vrscene:
           label: "Export to vrscene"
           path: "silex_maya.commands.export_vrscene.ExportVrscene"
+          ask_user: true
           parameters:
             directory:
               value: !command-output "setup:build_output_path:temp_directory"
