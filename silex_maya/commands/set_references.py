@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import pathlib
-import re
 import typing
 from typing import Any, Dict, List
 
@@ -12,6 +11,7 @@ from silex_client.action.command_base import CommandBase
 from silex_client.utils.files import format_sequence_string
 from silex_client.utils.parameter_types import AnyParameter, ListParameterMeta
 from silex_maya.utils.thread import execute_in_main_thread
+from silex_maya.utils.constants import MATCH_FILE_SEQUENCE
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -76,11 +76,9 @@ class SetReferences(CommandBase):
             return ""
 
         previous_value = cmds.getAttr(attribute)
-        REGEX_MATCH = [
-            re.compile(r"^.+\W(\<.+\>)\W.+$"),  # Matches V-ray's <Whatever> syntax
-            re.compile(r"^.+[^\w#](#+)\W.+$"),  # Matches V-ray's ####  syntax
-        ]
-        reference_value = format_sequence_string(value, previous_value, REGEX_MATCH)
+        reference_value = format_sequence_string(
+            value, previous_value, MATCH_FILE_SEQUENCE
+        )
 
         # If it is just a file node or a texture...
         split_attributes = attribute.split(".")
