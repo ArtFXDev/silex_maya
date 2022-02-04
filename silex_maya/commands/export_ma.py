@@ -47,7 +47,7 @@ class ExportMa(CommandBase):
         while True:
             # Create a new parameter to prompt label
             info_parameter = ParameterBuffer(
-                type=TextParameterMeta("warning"),
+                type=TextParameterMeta("info"),
                 name="Info",
                 label="Info",
             )
