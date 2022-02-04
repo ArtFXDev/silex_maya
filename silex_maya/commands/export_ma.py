@@ -117,7 +117,7 @@ class ExportMa(CommandBase):
         # Warning message
         if "info" in parameters:
             if parameters['selection']:
-                self.command_buffer.parameters["info"].type = TextParameterMeta("warning")
+                self.command_buffer.parameters["info"].type = TextParameterMeta("info")
                 self.command_buffer.parameters[
                     "info"
                 ].value = "You are about to export a selection, continue ?"
