@@ -11,10 +11,12 @@ from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.files import (
     find_sequence_from_path,
     is_valid_pipeline_path,
+    is_valid_path,
     sequence_exists,
 )
 from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
 from silex_maya.utils.thread import execute_in_main_thread
+from silex_maya.utils.constants import MATCH_FILE_SEQUENCE
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -143,9 +145,16 @@ class GetReferences(CommandBase):
         Convert the reference's file path into a sequence
         The reference is not a sequence, the returned value will be a sequence of one item
         """
-        pattern_match = ftpr.findAllFilesForPattern(str(file_path), None)
+        # We need to get the real path first, expand the syntaxes like <UDIM> or <frame04>
+        pattern_match: List[str] = ftpr.findAllFilesForPattern(str(file_path), None)
         if len(pattern_match) > 0:
             file_path = pathlib.Path(str(pattern_match[0]))
+        elif not is_valid_path(str(file_path)):
+            for regex in MATCH_FILE_SEQUENCE:
+                match = regex.match(str(file_path))
+                if match is None:
+                    continue
+                file_path = pathlib.Path(str(file_path).replace(match.group(1), "0"))
 
         return find_sequence_from_path(file_path)
 
