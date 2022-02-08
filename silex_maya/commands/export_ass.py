@@ -46,7 +46,7 @@ class ExportAss(CommandBase):
         "render_layers": {
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
-            "value": ["masterLayer"],
+            "value": ["masterLayer"]
         },
     }
 
@@ -59,9 +59,14 @@ class ExportAss(CommandBase):
 
         # Add render layers to parameters
         if "render_layers" in parameters:
+
             render_layers: List[Any] = await thread_maya.execute_in_main_thread(
-                renderSetup.instance().getRenderLayers
+                cmds.ls, typ="renderLayer"
             )
+
+            # Delete default renderlayers to replace them with mmasterLayer (necessaray for swiching viewport when exporting)
+            del render_layers[:3]
+
             selection_list: List[str] = ["masterLayer"] + [
                 layer.name() for layer in render_layers
             ]

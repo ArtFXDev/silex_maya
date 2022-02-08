@@ -60,9 +60,6 @@ class ExportVrscene(CommandBase):
         render_layers: List[str] = parameters["render_layers"]
         extension = await gazu.files.get_output_type_by_name("vrscene")
 
-        # Create temporary directory
-        os.makedirs(directory, exist_ok=True)
-
         # Batch: Export vrscene for each render layer
         output_files: List[pathlib.Path] = list()
         command_label = self.command_buffer.label
@@ -70,7 +67,7 @@ class ExportVrscene(CommandBase):
         for index, layer in enumerate(render_layers):
 
             # Diplay feed back in front
-            new_label = f"{command_label}: ({index + 1}/{len(render_layers)})"
+            new_label = f"{command_label}: ({index + 1}/{len(render_layers)}) --> Rendering: {layer}"
             self.command_buffer.label = new_label
             await action_query.async_update_websocket(apply_response=False)
 
