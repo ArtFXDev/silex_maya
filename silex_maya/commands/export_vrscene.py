@@ -67,7 +67,7 @@ class ExportVrscene(CommandBase):
         for index, layer in enumerate(render_layers):
 
             # Diplay feed back in front
-            new_label = f"{command_label}: ({index + 1}/{len(render_layers)}) --> Rendering: {layer}"
+            new_label = f"{command_label}: ({index + 1}/{len(render_layers)}) --> Exporting: {layer}"
             self.command_buffer.label = new_label
             await action_query.async_update_websocket(apply_response=False)
 
