@@ -6,7 +6,9 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils import thread as thread_client
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta, TextParameterMeta
+from silex_client.action.parameter_buffer import ParameterBuffer
+
 from silex_maya.utils import thread as thread_maya
 
 # Forward references
@@ -16,6 +18,7 @@ if typing.TYPE_CHECKING:
 import logging
 import pathlib
 import subprocess
+import os
 
 import gazu.files
 from maya import cmds
@@ -45,6 +48,26 @@ class ExportVrscene(CommandBase):
             "value": ["defaultRenderLayer"],
         },
     }
+
+    async def _prompt_error(self, action_query: ActionQuery) -> bool:
+        """
+        Helper to prompt the user a label
+        """
+
+        # Check if export is valid
+        while True:
+            # Create a new parameter to prompt label
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta("warning"),
+                name="Info",
+                label="Info",
+                value="Vrscene was not exported. Try to manualy reload Vrayformaya plugins (turn auto-load on and restart maya)"
+            )
+
+            # Prompt the user with a label
+            await self.prompt_user(
+                action_query, {"info": info_parameter}
+            )
 
     @CommandBase.conform_command()
     async def __call__(
@@ -94,6 +117,10 @@ class ExportVrscene(CommandBase):
             )
 
             output_files.append(output_path)
+
+            # Check output
+            if not os.path.exists(output_path):
+                await self._prompt_error(action_query)
 
         return output_files
 
