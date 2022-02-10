@@ -6,7 +6,9 @@ from typing import Any, Dict, List
 from silex_client.action.command_base import CommandBase
 from silex_client.utils import command_builder
 from silex_client.utils import thread as thread_client
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta, TextParameterMeta
+from silex_client.action.parameter_buffer import ParameterBuffer
+
 from silex_maya.utils import thread as thread_maya
 
 # Forward references
@@ -16,6 +18,7 @@ if typing.TYPE_CHECKING:
 import logging
 import pathlib
 import subprocess
+import os
 
 import gazu.files
 from maya import cmds
@@ -46,17 +49,25 @@ class ExportVrscene(CommandBase):
         },
     }
 
-    def save_as_temp(self, scene_path: pathlib.Path, temp_directory: pathlib.Path) -> pathlib.Path:
+    async def _prompt_error(self, action_query: ActionQuery) -> bool:
+        """
+        Helper to prompt the user a label
+        """
 
-            temp_scene = (temp_directory / f'{scene_path.stem}_temp').with_suffix(f'.ma')
-            cmds.file(rename=temp_scene)
-            cmds.file(save=True, type="mayaAscii")
+        # Check if export is valid
+        while True:
+            # Create a new parameter to prompt label
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta("warning"),
+                name="Info",
+                label="Info",
+                value="Vrscene was not exported. Try to manualy reload Vrayformaya plugins (turn auto-load on and restart maya)"
+            )
 
-            # switch back to original scene
-            cmds.file(rename=scene_path)
-            cmds.file(save=True, type="mayaAscii")
-
-            return temp_scene
+            # Prompt the user with a label
+            await self.prompt_user(
+                action_query, {"info": info_parameter}
+            )
 
     @CommandBase.conform_command()
     async def __call__(
@@ -75,11 +86,7 @@ class ExportVrscene(CommandBase):
         output_files: List[pathlib.Path] = list()
         command_label = self.command_buffer.label
 
-
-        # Create temporary scene for rendering (in case opened scene is empty or named incorrectly)
-        active_scene: str = await thread_maya.execute_in_main_thread(cmds.file, q=True, sn=True)
-        temp_scene: pathlib.Path = await thread_maya.execute_in_main_thread(self.save_as_temp, pathlib.Path(active_scene), directory)
-
+        render_scene: str = await thread_maya.execute_in_main_thread(cmds.file, q=True, sn=True)
 
         for index, layer in enumerate(render_layers):
 
@@ -102,7 +109,7 @@ class ExportVrscene(CommandBase):
                 .param("rl", layer)
                 .param("exportFileName", str(output_path))
                 .param("noRender")
-                .value(str(temp_scene))
+                .value(str(render_scene))
             )
 
             await thread_client.execute_in_thread(
@@ -110,6 +117,10 @@ class ExportVrscene(CommandBase):
             )
 
             output_files.append(output_path)
+
+            # Check output
+            if not os.path.exists(output_path):
+                await self._prompt_error(action_query)
 
         return output_files
 
