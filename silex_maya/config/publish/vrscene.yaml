@@ -50,13 +50,6 @@ vrscene:
       label: "Export"
       index: 50
       commands:
-        load_plugin:
-          label: "Ensure Vray Plugin is load"
-          path: "silex_maya.commands.load_plugin.LoadPlugin"
-          ask_user: false
-          parameters:
-            plugin_name: "vrayformaya"
-
         export_vrscene:
           label: "Export to vrscene"
           path: "silex_maya.commands.export_vrscene.ExportVrscene"
