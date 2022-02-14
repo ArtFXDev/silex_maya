@@ -65,11 +65,15 @@ class ExportAss(CommandBase):
             )
 
             # Delete default renderlayers to replace them with mmasterLayer (necessaray for swiching viewport when exporting)
-            del render_layers[:3]
+            del render_layers[0]
+
+            for index, layer in enumerate(render_layers):
+                render_layers[index] = layer.replace('rs_', '')
 
             selection_list: List[str] = ["masterLayer"] + [
-                layer.name() for layer in render_layers
+                layer for layer in render_layers
             ]
+            
             self.command_buffer.parameters[
                 "render_layers"
             ].type = MultipleSelectParameterMeta(*selection_list)
