@@ -30,6 +30,7 @@ class Reference(CommandBase):
         },
         "enable_namespace": {"label": "Enable namespace", "type": bool, "value": True},
         "namespace": {"label": "Namespace", "type": str, "value": ""},
+        "import": {"type": bool, "value": False, "hide": True},
     }
 
     async def setup(
@@ -52,9 +53,15 @@ class Reference(CommandBase):
         reference: pathlib.Path = parameters["reference"]
         file_name = reference.stem
 
-        args: Dict[str, Any] = {"r": True}
+        args: Dict[str, Any] = {}
 
         if parameters["enable_namespace"]:
             args["namespace"] = parameters["namespace"] or file_name
+
+        if parameters["import"]:
+            args["i"] = True
+            args["ra"] = True
+        else:
+            args["r"] = True
 
         await execute_in_main_thread(cmds.file, str(reference), **args)
