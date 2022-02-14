@@ -1,0 +1,11 @@
+import: !inherit
+  parent: .reference
+
+  thumbnail: "import.svg"
+  steps:
+    reference:
+      label: "Import"
+      commands:
+        reference:
+          parameters:
+            import: True
