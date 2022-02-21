@@ -83,7 +83,6 @@ class ExportVrscene(CommandBase):
         extension = await gazu.files.get_output_type_by_name("vrscene")
 
         # Batch: Export vrscene for each render layer
-        output_files: List[pathlib.Path] = list()
         command_label = self.command_buffer.label
 
         render_scene: str = await thread_maya.execute_in_main_thread(cmds.file, q=True, sn=True)
@@ -116,13 +115,11 @@ class ExportVrscene(CommandBase):
                 subprocess.call, batch_cmd.as_argv(), shell=True
             )
 
-            output_files.append(output_path)
-
             # Check output
             if not os.path.exists(output_path):
                 await self._prompt_error(action_query)
 
-        return output_files
+        return directory
 
     async def setup(
         self,
