@@ -18,6 +18,7 @@ import pathlib
 
 import gazu.files
 import maya.cmds as cmds
+from maya.app.renderSetup.model import renderSetup
 
 
 class ExportMa(CommandBase):
@@ -69,6 +70,20 @@ class ExportMa(CommandBase):
             else:
                 return False
 
+    @staticmethod
+    def _export_renderlayers(export_path: str):
+        """
+        The maya export does not include the renderlayers.
+        We need to export them as json format and decode them back into
+        the exported scene
+        """
+        render_setups = renderSetup.instance().encode(None)
+        current_file = cmds.file(q=True, sn=True)
+        cmds.file(export_path, open=True, force=True)
+        renderSetup.instance().decode(render_setups)
+        cmds.file(save=True)
+        cmds.file(current_file, open=True)
+
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -105,6 +120,8 @@ class ExportMa(CommandBase):
             pr=True,
             typ="mayaAscii",
         )
+        # Special treatment for renderlayers
+        await execute_in_main_thread(self._export_renderlayers, export_path)
 
         return export_path
 
