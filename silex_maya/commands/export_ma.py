@@ -77,6 +77,9 @@ class ExportMa(CommandBase):
         We need to export them as json format and decode them back into
         the exported scene
         """
+        if len(cmds.ls(type="renderLayer")) <= 1:
+            return
+
         render_setups = renderSetup.instance().encode(None)
         current_file = cmds.file(q=True, sn=True)
         cmds.file(export_path, open=True, force=True)
