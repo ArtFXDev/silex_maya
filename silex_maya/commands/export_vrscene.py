@@ -63,6 +63,20 @@ class ExportVrscene(CommandBase):
             self.command_buffer.progress = ((layer_index.value + layer_progression)/layer_count) * 100
             await action_query.async_update_websocket(apply_response=False)
 
+    @staticmethod
+    def _load_vray():
+        # Ensure plugins are loaded
+        cmds.loadPlugin("vrayformaya", quiet=True)
+        cmds.loadPlugin("vrayvolumegrid", quiet=True)
+
+        # Auto load
+        cmds.pluginInfo("vrayformaya", edit=True, autoload=True)
+        cmds.pluginInfo("vrayvolumegrid", edit=True, autoload=True)
+
+        # Edit attribs
+        cmds.setAttr("defaultRenderGlobals.currentRenderer", l=False)  
+        cmds.setAttr("defaultRenderGlobals.currentRenderer", "vray", type="string")
+
 
     @CommandBase.conform_command()
     async def __call__(
@@ -79,6 +93,10 @@ class ExportVrscene(CommandBase):
         # Batch: Export vrscene for each render layer
         command_label = self.command_buffer.label
         render_output = await execute_in_main_thread(cmds.getAttr, "vraySettings.vrscene_filename")
+
+        await execute_in_main_thread(self._load_vray)
+        await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_render_on", 0)
+        await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_on", 1)
 
         layer_index = SharedVariable(0)
         task = asyncio.create_task(self.update_progress(action_query, layer_index, len(render_layers)))
@@ -97,10 +115,16 @@ class ExportVrscene(CommandBase):
             )
 
             await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_filename", output_path, type="string")
-            await execute_in_main_thread(mel.eval, f"vrend -layer {layer}")
+            await execute_in_main_thread(cmds.editRenderLayerGlobals, currentRenderLayer=layer )
+            logger.info("Executing: vrend on layer %s to %s", layer, output_path)
+            await execute_in_main_thread(mel.eval, "vrend")
 
         task.cancel()
+        if "defaultRenderLayer" in await execute_in_main_thread(cmds.ls, type="renderLayer"):
+            await execute_in_main_thread(cmds.editRenderLayerGlobals, currentRenderLayer="defaultRenderLayer")
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_filename", render_output, type="string")
+        await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_render_on", 1)
+        await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_on", 0)
 
         return directory
 
