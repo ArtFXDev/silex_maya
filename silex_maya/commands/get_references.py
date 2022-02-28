@@ -93,9 +93,10 @@ class GetReferences(CommandBase):
         # Test the parameters for a file node
         if cmds.nodeType(attribute) == "file":
             node = ".".join(attribute.split(".")[:-1])
-            if cmds.getAttr(f"{node}.uvTilingMode") == 0:
-                return False
-            if cmds.getAttr(f"{node}.useFrameExtension") != 1:
+            if (
+                cmds.getAttr(f"{node}.uvTilingMode") == 0
+                and cmds.getAttr(f"{node}.useFrameExtension") != 1
+            ):
                 return False
 
         # Maya references cannot be references
