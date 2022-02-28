@@ -100,7 +100,7 @@ class ExportMa(CommandBase):
         if selection:
             await execute_in_main_thread(
                 cmds.file,
-                rename=export_path,
+                export_path,
                 es=selection,
                 ea=not (selection),
                 pr=True,
