@@ -1,0 +1,12 @@
+reference:
+  thumbnail: "ref.svg"
+  steps:
+    reference:
+      label: "Reference"
+      commands:
+        reference:
+          label: "Import"
+          path: "silex_maya.commands.reference.Reference"
+        focus:
+          path: "silex_client.commands.focus.Focus"
+          hide: true

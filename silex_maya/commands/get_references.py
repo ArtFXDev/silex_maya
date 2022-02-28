@@ -86,17 +86,22 @@ class GetReferences(CommandBase):
             response["new_path"] = pathlib.Path(response["new_path"])
         return response["new_path"], response["skip"], response["skip_all"]
 
-    def _test_possible_sequence(self, attribute: str) -> bool:
+    def _test_possible_sequence(self, attribute: str, file_path: pathlib.Path) -> bool:
         """
         For some references, we don't want to look for sequences
         """
         # Test the parameters for a file node
         if cmds.nodeType(attribute) == "file":
             node = ".".join(attribute.split(".")[:-1])
-            if cmds.getAttr(f"{node}.uvTilingMode") == 0:
+            if (
+                cmds.getAttr(f"{node}.uvTilingMode") == 0
+                and cmds.getAttr(f"{node}.useFrameExtension") != 1
+            ):
                 return False
-            if cmds.getAttr(f"{node}.useFrameExtension") != 1:
-                return False
+
+        # Maya references cannot be references
+        if file_path.suffix in [".ma", ".mb"]:
+            return False
 
         return True
 
@@ -177,9 +182,11 @@ class GetReferences(CommandBase):
         skip_all = False
         for attribute, file_path in referenced_files:
             # Get the sequence that correspond to the file path
-            file_paths = await execute_in_main_thread(
-                self._get_reference_sequence, file_path
-            )
+            file_paths = fileseq.findSequencesInList([file_path])[0]
+            if self._test_possible_sequence(attribute, file_path):
+                file_paths = await execute_in_main_thread(
+                    self._get_reference_sequence, file_path
+                )
 
             # Skip the custom extensions provided
             if file_paths.extension() in excluded_extensions:

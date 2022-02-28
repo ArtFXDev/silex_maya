@@ -97,14 +97,18 @@ class ExportMa(CommandBase):
 
         # Export in temps directory
         os.makedirs(directory, exist_ok=True)
-        await execute_in_main_thread(
-            cmds.file,
-            export_path,
-            es=selection,
-            ea=not(selection),
-            pr=True,
-            typ="mayaAscii",
-        )
+        if selection:
+            await execute_in_main_thread(
+                cmds.file,
+                rename=export_path,
+                es=selection,
+                ea=not (selection),
+                pr=True,
+                typ="mayaAscii",
+            )
+        else:
+            await execute_in_main_thread(cmds.file, rename=export_path)
+            await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
 
         return export_path
 
@@ -116,15 +120,14 @@ class ExportMa(CommandBase):
     ):
         # Warning message
         if "info" in parameters:
-            if parameters['selection']:
+            if parameters["selection"]:
                 self.command_buffer.parameters["info"].type = TextParameterMeta("info")
-                self.command_buffer.parameters[
-                    "info"
-                ].value = "You are about to export a selection, continue ?"
-            else:
-                self.command_buffer.parameters["info"].type = TextParameterMeta(
-                    "info"
+                self.command_buffer.parameters["info"].value = (
+                    "You are about to export a selection, continue ?\n"
+                    + "(renderlayers are not exported when exporting the selection)"
                 )
+            else:
+                self.command_buffer.parameters["info"].type = TextParameterMeta("info")
                 self.command_buffer.parameters[
                     "info"
                 ].value = "Publish full scene (ignore selection)"

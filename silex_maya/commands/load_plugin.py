@@ -41,8 +41,8 @@ class LoadPlugin(CommandBase):
         def load_plugin(plugin_name):
             cmds.loadPlugin(plugin_name)
 
-            # Ensure autoload 
-            cmds.pluginInfo( plugin_name, edit=True, autoload=True )
+            # Ensure autoload
+            cmds.pluginInfo(plugin_name, edit=True, autoload=True)
 
         logger.info(f"Load: {plugin_name}")
         await execute_in_main_thread(load_plugin, plugin_name)
