@@ -96,9 +96,6 @@ class ExportVrscene(CommandBase):
 
         # Batch: Export vrscene for each render layer
         command_label = self.command_buffer.label
-        render_output = await execute_in_main_thread(
-            cmds.getAttr, "vraySettings.vrscene_filename"
-        )
 
         await execute_in_main_thread(self._load_vray)
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_render_on", 0)
@@ -141,9 +138,8 @@ class ExportVrscene(CommandBase):
             await execute_in_main_thread(
                 cmds.editRenderLayerGlobals, currentRenderLayer="defaultRenderLayer"
             )
-        await execute_in_main_thread(
-            cmds.setAttr, "vraySettings.vrscene_filename", render_output, type="string"
-        )
+
+
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_render_on", 1)
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_on", 0)
 
