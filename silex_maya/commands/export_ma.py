@@ -119,7 +119,7 @@ class ExportMa(CommandBase):
             cmds.file,
             export_path,
             es=selection,
-            ea=not(selection),
+            ea=not (selection),
             pr=True,
             typ="mayaAscii",
         )
@@ -136,15 +136,13 @@ class ExportMa(CommandBase):
     ):
         # Warning message
         if "info" in parameters:
-            if parameters['selection']:
+            if parameters["selection"]:
                 self.command_buffer.parameters["info"].type = TextParameterMeta("info")
                 self.command_buffer.parameters[
                     "info"
                 ].value = "You are about to export a selection, continue ?"
             else:
-                self.command_buffer.parameters["info"].type = TextParameterMeta(
-                    "info"
-                )
+                self.command_buffer.parameters["info"].type = TextParameterMeta("info")
                 self.command_buffer.parameters[
                     "info"
                 ].value = "Publish full scene (ignore selection)"
