@@ -107,8 +107,15 @@ class ExportMa(CommandBase):
                 typ="mayaAscii",
             )
         else:
+            current_path = await execute_in_main_thread(cmds.file, q=True, sn=True)
+            if current_path:
+                await execute_in_main_thread(cmds.file, save=True)
             await execute_in_main_thread(cmds.file, rename=export_path)
             await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
+
+            if current_path:
+                await execute_in_main_thread(cmds.file, rename=current_path)
+                await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
 
         return export_path
 
