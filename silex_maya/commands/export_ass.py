@@ -46,7 +46,7 @@ class ExportAss(CommandBase):
         "render_layers": {
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
-            "value": ["masterLayer"]
+            "value": ["masterLayer"],
         },
     }
 
@@ -68,12 +68,12 @@ class ExportAss(CommandBase):
             del render_layers[0]
 
             for index, layer in enumerate(render_layers):
-                render_layers[index] = layer.replace('rs_', '')
+                render_layers[index] = layer.replace("rs_", "")
 
             selection_list: List[str] = ["masterLayer"] + [
                 layer for layer in render_layers
             ]
-            
+
             self.command_buffer.parameters[
                 "render_layers"
             ].type = MultipleSelectParameterMeta(*selection_list)

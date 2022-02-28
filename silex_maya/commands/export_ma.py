@@ -18,7 +18,6 @@ import pathlib
 
 import gazu.files
 import maya.cmds as cmds
-from maya.app.renderSetup.model import renderSetup
 
 
 class ExportMa(CommandBase):
@@ -70,23 +69,6 @@ class ExportMa(CommandBase):
             else:
                 return False
 
-    @staticmethod
-    def _export_renderlayers(export_path: str):
-        """
-        The maya export does not include the renderlayers.
-        We need to export them as json format and decode them back into
-        the exported scene
-        """
-        if len(cmds.ls(type="renderLayer")) <= 1:
-            return
-
-        render_setups = renderSetup.instance().encode(None)
-        current_file = cmds.file(q=True, sn=True)
-        cmds.file(export_path, open=True, force=True)
-        renderSetup.instance().decode(render_setups)
-        cmds.file(save=True)
-        cmds.file(current_file, open=True)
-
     @CommandBase.conform_command()
     async def __call__(
         self,
@@ -115,16 +97,18 @@ class ExportMa(CommandBase):
 
         # Export in temps directory
         os.makedirs(directory, exist_ok=True)
-        await execute_in_main_thread(
-            cmds.file,
-            export_path,
-            es=selection,
-            ea=not(selection),
-            pr=True,
-            typ="mayaAscii",
-        )
-        # Special treatment for renderlayers
-        await execute_in_main_thread(self._export_renderlayers, export_path)
+        if selection:
+            await execute_in_main_thread(
+                cmds.file,
+                rename=export_path,
+                es=selection,
+                ea=not (selection),
+                pr=True,
+                typ="mayaAscii",
+            )
+        else:
+            await execute_in_main_thread(cmds.file, rename=export_path)
+            await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
 
         return export_path
 
@@ -136,15 +120,14 @@ class ExportMa(CommandBase):
     ):
         # Warning message
         if "info" in parameters:
-            if parameters['selection']:
+            if parameters["selection"]:
                 self.command_buffer.parameters["info"].type = TextParameterMeta("info")
-                self.command_buffer.parameters[
-                    "info"
-                ].value = "You are about to export a selection, continue ?"
-            else:
-                self.command_buffer.parameters["info"].type = TextParameterMeta(
-                    "info"
+                self.command_buffer.parameters["info"].value = (
+                    "You are about to export a selection, continue ?\n"
+                    + "(renderlayers are not exported when exporting the selection)"
                 )
+            else:
+                self.command_buffer.parameters["info"].type = TextParameterMeta("info")
                 self.command_buffer.parameters[
                     "info"
                 ].value = "Publish full scene (ignore selection)"
