@@ -100,19 +100,15 @@ class ExportMa(CommandBase):
         if selection:
             await execute_in_main_thread(
                 cmds.file,
-                export_path,
+                rename=export_path,
                 es=selection,
                 ea=not (selection),
                 pr=True,
                 typ="mayaAscii",
             )
         else:
-            await execute_in_main_thread(
-                cmds.file,
-                export_path,
-                save=True,
-                typ="mayaAscii",
-            )
+            await execute_in_main_thread(cmds.file, rename=export_path)
+            await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
 
         return export_path
 
