@@ -19,7 +19,6 @@ import pathlib
 
 import gazu.files
 from maya import cmds
-from maya import mel
 
 
 class ExportVrscene(CommandBase):
