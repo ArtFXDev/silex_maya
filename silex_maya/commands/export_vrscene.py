@@ -5,7 +5,7 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta, IntArrayParameterMeta
 from silex_client.utils.datatypes import SharedVariable
 
 from silex_maya.utils.thread import execute_in_main_thread
@@ -44,6 +44,17 @@ class ExportVrscene(CommandBase):
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
             "value": ["defaultRenderLayer"],
+        },
+        "parameter_overrides": {
+            "type": bool,
+            "label": "Parameter overrides",
+            "value": False,
+        },
+        "frame_range": {
+            "label": "Frame range ( start, end )",
+            "type": IntArrayParameterMeta(2),
+            "value": [0, 200],
+            "hide": True,
         },
     }
 
@@ -93,6 +104,8 @@ class ExportVrscene(CommandBase):
         file_name: pathlib.Path = parameters["file_name"]
         render_layers: List[str] = parameters["render_layers"]
         extension = await gazu.files.get_output_type_by_name("vrscene")
+        parameter_overrides: bool = parameters["parameter_overrides"]
+        frame_range: List[int] = parameters["frame_range"]
 
         # Batch: Export vrscene for each render layer
         command_label = self.command_buffer.label
@@ -100,6 +113,9 @@ class ExportVrscene(CommandBase):
         await execute_in_main_thread(self._load_vray)
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_render_on", 0)
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_on", 1)
+        if parameter_overrides:
+            await execute_in_main_thread(cmds.setAttr, "defaultRenderGlobals.startFrame", frame_range[0])
+            await execute_in_main_thread(cmds.setAttr, "defaultRenderGlobals.endFrame", frame_range[1])
 
         layer_index = SharedVariable(0)
         task = asyncio.create_task(
@@ -129,7 +145,7 @@ class ExportVrscene(CommandBase):
                 cmds.editRenderLayerGlobals, currentRenderLayer=layer
             )
             logger.info("Executing: vrend on layer %s to %s", layer, output_path)
-            await execute_in_main_thread(mel.eval, "vrend")
+            await execute_in_main_thread(cmds.vrend)
 
         task.cancel()
         if "defaultRenderLayer" in await execute_in_main_thread(
@@ -160,3 +176,8 @@ class ExportVrscene(CommandBase):
         self.command_buffer.parameters[
             "render_layers"
         ].type = MultipleSelectParameterMeta(*render_layers)
+
+        # Overriding frame_range is optional
+        hide_overrides = not parameters["parameter_overrides"]
+        self.command_buffer.parameters["frame_range"].hide = hide_overrides
+
