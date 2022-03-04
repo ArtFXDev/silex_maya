@@ -69,11 +69,13 @@ class ExportVrmesh(CommandBase):
 
     @staticmethod
     def import_references():
+        selection = cmds.ls(sl=True)
         for selection in cmds.ls(sl=True):
             for node in cmds.listRelatives(selection, allDescendents=True):
                 if cmds.referenceQuery(node, isNodeReferenced=True):
                     file_path = cmds.referenceQuery(node, f=True)
                     cmds.file(file_path, importReference=True)
+        cmds.select(selection)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -137,10 +139,18 @@ class ExportVrmesh(CommandBase):
 
                 output_paths.append(directory / export_options["fname"])
         else:
+            selection = await execute_in_main_thread(cmds.ls, sl=True)
+            node_parent = cmds.listRelatives(selection[0], parent=True)
+            if len(selection) == 1 and node_parent:
+                await execute_in_main_thread(cmds.parent, selection[0], world=True)
+
             if create_proxy:
                 await execute_in_main_thread(self.import_references)
             logger.info("Exporting full selection as %s", export_options["fname"])
             await execute_in_main_thread(cmds.vrayCreateProxy, **export_options)
+
+            if len(selection) == 1 and node_parent:
+                await execute_in_main_thread(cmds.parent, export_options["node"], node_parent[0])
             output_paths.append(directory / export_options["fname"])
 
         return output_paths
