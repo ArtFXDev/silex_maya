@@ -63,6 +63,10 @@ class ExportVrmesh(CommandBase):
         },
     }
 
+    def __init__(self, *args, **kwargs):
+        self.prompting = False
+        super().__init__(*args, **kwargs)
+
     @staticmethod
     def import_references():
         for selection in cmds.ls(sl=True):
@@ -102,7 +106,9 @@ class ExportVrmesh(CommandBase):
         while not await execute_in_main_thread(cmds.ls, sl=True):
             info_parameter = copy.copy(self.command_buffer.parameters["info"])
             info_parameter.value = "No nodes are selected. Please select a node and press continue"
+            self.prompting = True
             await self.prompt_user(action_query, {"info": info_parameter})
+            self.prompting = False
 
         directory.mkdir(parents=True, exist_ok=True)
         logger.info("Using vrmesh options: %s", export_options)
@@ -146,7 +152,7 @@ class ExportVrmesh(CommandBase):
         logger: logging.Logger,
     ):
         # Don't execute the setup in the prompt_user
-        if self.command_buffer.status == 3:
+        if self.prompting:
             return
 
         self.command_buffer.parameters["node_name"].hide = parameters.get(
