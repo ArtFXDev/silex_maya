@@ -145,6 +145,10 @@ class ExportVrmesh(CommandBase):
         action_query: ActionQuery,
         logger: logging.Logger,
     ):
+        # Don't execute the setup in the prompt_user
+        if self.command_buffer.status == 3:
+            return
+
         self.command_buffer.parameters["node_name"].hide = parameters.get(
             "separate_export", False
         ) or not parameters.get("create_proxy", False)

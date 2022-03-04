@@ -173,30 +173,6 @@ ma:
             value: !command-output "conform_scene:save:new_path"
           hide: true
 
-    preview:
-      label: "Upload preview"
-      index: 35
-      commands:
-        step_exit:
-          label: "Skip reconform"
-          path: "silex_client.commands.exit_step.ExitStep"
-          parameters:
-            enable: !command-output "get_conform_location:get_output_cache:value"
-          hide: true
-
-        capture_preview:
-          label: "Capture preview"
-          path: "silex_maya.commands.capture_preview.CapturePreview"
-
-        upload_preview:
-          label: "Upload preview"
-          path: "silex_maya.commands.upload_preview.UploadPreview"
-          ask_user: true
-          parameters:
-            preview_path:
-              value: !command-output "preview:capture_preview:thumbnail"
-              hide: true
-
     output:
       index: 40
       hide: true
