@@ -166,7 +166,6 @@ class ExportAss(CommandBase):
         directory: pathlib.Path = parameters[
             "directory"
         ]  # The directory parameter is temp directory
-        # output_path_without_extension = (directory / file_name)
 
         selected_render_layers: List[str] = parameters["render_layers"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
