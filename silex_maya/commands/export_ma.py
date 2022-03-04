@@ -96,7 +96,7 @@ class ExportMa(CommandBase):
             selection = await self._prompt_warning(action_query)
 
         # Export in temps directory
-        os.makedirs(directory, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True)
         if selection:
             await execute_in_main_thread(
                 cmds.file,
@@ -110,12 +110,12 @@ class ExportMa(CommandBase):
             current_path = await execute_in_main_thread(cmds.file, q=True, sn=True)
             if current_path:
                 await execute_in_main_thread(cmds.file, save=True)
+
             await execute_in_main_thread(cmds.file, rename=export_path)
             await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
 
             if current_path:
                 await execute_in_main_thread(cmds.file, rename=current_path)
-                await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
 
         return export_path
 
