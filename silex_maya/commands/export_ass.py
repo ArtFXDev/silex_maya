@@ -140,12 +140,16 @@ class ExportAss(CommandBase):
 
                     export_args = {'asciiAss':1, 'sf':frame, 'ef':frame, 'f':output_path}
                     
+                    # Specific export for assets
                     if layer_name == 'assets':
                         output_path = directory / "assets" / f"{file_name}"
                         export_args.update({'f': output_path})
-                        del export_args['sf']
-                        del export_args['ef']
-                        
+
+                        # If only ione frame i exported, assets does not need increment
+                        if len(frames_list) == 1:
+                            del export_args['sf']
+                            del export_args['ef']
+                            
                     # Export the active (visible) layer in the context
                     renderSetup.instance().switchToLayer(layer)
                     cmds.arnoldExportAss(**export_args)
