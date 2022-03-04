@@ -70,7 +70,7 @@ class ExportAss(CommandBase):
             for index, layer in enumerate(render_layers):
                 render_layers[index] = layer.replace("rs_", "")
 
-            selection_list: List[str] = ["masterLayer"] + [
+            selection_list: List[str] = ["masterLayer", 'assets'] + [
                 layer for layer in render_layers
             ]
 
