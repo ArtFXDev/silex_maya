@@ -82,6 +82,15 @@ ma:
       label: "Upload Preview"
       index: 70
       commands:
+        step_exit:
+          label: "Prompt preview"
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable:
+              label: "Skip preview capture"
+              value: false
+          ask_user: True
+
         capture_preview:
           label: "Capture preview"
           path: "silex_maya.commands.capture_preview.CapturePreview"
@@ -89,7 +98,6 @@ ma:
         upload_preview:
           label: "Upload preview"
           path: "silex_maya.commands.upload_preview.UploadPreview"
-          ask_user: true
           parameters:
             preview_path:
               value: !command-output "preview:capture_preview:thumbnail"

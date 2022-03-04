@@ -1,0 +1,28 @@
+vrmesh:
+  steps:
+    clear:
+      label: "Clear previous publish"
+      index: 50
+      commands:
+        remove:
+          label: "Clear publish directory"
+          path: "silex_client.commands.remove.Remove"
+          parameters:
+            file_path: 
+              value: !command-output "setup:build_output_path:directory"
+              hide: true
+    export:
+      label: "Export"
+      index: 60
+      commands:
+        export_vrmesh:
+          label: "Export in vrmesh"
+          path: "silex_maya.commands.export_vrmesh.ExportVrmesh"
+          ask_user: true
+          parameters:
+            directory: 
+              value: !command-output "setup:build_output_path:directory"
+              hide: true
+            file_name: 
+              value: !command-output "setup:build_output_path:file_name"
+              hide: true

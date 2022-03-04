@@ -46,7 +46,7 @@ class ExportAss(CommandBase):
         "render_layers": {
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
-            "value": ["masterLayer"],
+            "value": ["masterLayer", "assets"],
         },
     }
 
@@ -87,6 +87,15 @@ class ExportAss(CommandBase):
         finally:
             renderSetup.instance().switchToLayer(previous_rs)
 
+    def _get_masterlayer(self):
+        # Switch masterlayer to visible
+        mel.eval(
+            "$tmp = $gMainProgressBar; timeField -edit -value `currentTime -query` TimeSlider|MainTimeSliderLayout|formLayout8|timeField1; renderLayerDisplayName masterLayer;"
+        )
+
+        # Return visible layer
+        return renderSetup.instance().getVisibleRenderLayer()
+
     def _export_sequence(
         self,
         directory: pathlib.Path,
@@ -112,12 +121,14 @@ class ExportAss(CommandBase):
 
             # Get master layer if it has been selected in the parameters
             if "masterLayer" in selected_render_layers:
-                # Switch masterlayer to visible and add it to the dictionary
-                mel.eval(
-                    "$tmp = $gMainProgressBar; timeField -edit -value `currentTime -query` TimeSlider|MainTimeSliderLayout|formLayout8|timeField1; renderLayerDisplayName masterLayer;"
-                )
                 render_layers_dict.update(
-                    {"masterLayer": renderSetup.instance().getVisibleRenderLayer()}
+                    {"masterLayer": self._get_masterlayer()}
+                )
+
+            # Get master layer if assets has been selected in the parameters (asset is a masterlayer)
+            if "assets" in selected_render_layers:
+                render_layers_dict.update(
+                    {"assets": self._get_masterlayer()}
                 )
 
             # Each layer is exported seperatly
@@ -126,7 +137,10 @@ class ExportAss(CommandBase):
 
                 # We export a ass file for every frame in the range
                 for frame in frames_list:
-
+                    
+                    if layer_name == 'assets':
+                        output_path = directory / "assets" / f"{file_name}"
+                        
                     # Export the active (visible) layer in the context
                     renderSetup.instance().switchToLayer(layer)
                     cmds.arnoldExportAss(asciiAss=1, sf=frame, ef=frame, f=output_path)
