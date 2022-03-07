@@ -1,0 +1,18 @@
+set-context: !inherit
+  parent: set-context
+
+  steps:
+    open_last_work:
+      label: "Open last work scene"
+      index: 60
+      commands:
+        step_exit:
+          hide: true
+          path: "silex_client.commands.exit_step.ExitStep"
+          parameters:
+            enable: !command-output "switch_context:set_context:open_last_work"
+
+        open:
+          path: "silex_maya.commands.open.Open"
+          parameters:
+            file_path: !command-output "switch_context:set_context:work_file"
