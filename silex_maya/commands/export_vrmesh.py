@@ -69,6 +69,7 @@ class ExportVrmesh(CommandBase):
 
     @staticmethod
     def import_references():
+        # Since importing references clears the selection we store it before
         selection = cmds.ls(sl=True)
         for selection in cmds.ls(sl=True):
             for node in cmds.listRelatives(selection, allDescendents=True):
