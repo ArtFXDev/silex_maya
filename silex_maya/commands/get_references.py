@@ -39,6 +39,18 @@ class GetReferences(CommandBase):
             "tooltip": "List of file extensions to ignore",
             "hide": True,
         },
+        "included_extensions": {
+            "label": "Included extensions",
+            "type": ListParameterMeta(str),
+            "value": [],
+            "tooltip": "List of file extensions to accept",
+            "hide": True,
+        },
+        "skip_existing_conformed_file": {
+            "label": "Skip existing conformed file",
+            "type": bool,
+            "value": True,
+        },
     }
 
     async def _prompt_new_path(
@@ -171,6 +183,8 @@ class GetReferences(CommandBase):
         logger: logging.Logger,
     ):
         excluded_extensions = parameters["excluded_extensions"]
+        included_extensions = parameters["included_extensions"]
+        skip_existing_conformed_file = parameters["skip_existing_conformed_file"]
 
         # Each referenced file must be verified
         references: List[Tuple[str, fileseq.FileSequence]] = []
@@ -190,6 +204,12 @@ class GetReferences(CommandBase):
 
             # Skip the custom extensions provided
             if file_paths.extension() in excluded_extensions:
+                logger.warning(
+                    "Excluded attribute %s pointing to %s", attribute, file_path
+                )
+                continue
+
+            if len(excluded_extensions) > 0 and file_paths.extension() not in included_extensions:
                 logger.warning(
                     "Excluded attribute %s pointing to %s", attribute, file_path
                 )
@@ -219,7 +239,7 @@ class GetReferences(CommandBase):
                 continue
 
             # Skip the references that are already conformed
-            if all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
+            if skip_existing_conformed_file and all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
                 continue
 
             # Append to the verified path
