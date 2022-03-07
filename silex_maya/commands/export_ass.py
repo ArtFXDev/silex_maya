@@ -22,7 +22,7 @@ from maya.app.renderSetup.model import renderSetup
 
 class ExportAss(CommandBase):
     """
-    Export selection as ass
+    Export to ass
     """
 
     parameters = {
@@ -137,13 +137,22 @@ class ExportAss(CommandBase):
 
                 # We export a ass file for every frame in the range
                 for frame in frames_list:
+
+                    export_args = {'asciiAss':1, 'sf':frame, 'ef':frame, 'f':output_path}
                     
+                    # Specific export for assets
                     if layer_name == 'assets':
                         output_path = directory / "assets" / f"{file_name}"
-                        
+                        export_args.update({'f': output_path})
+
+                        # If only one frame is exported, assets does not need increment
+                        if len(frames_list) == 1:
+                            del export_args['sf']
+                            del export_args['ef']
+                            
                     # Export the active (visible) layer in the context
                     renderSetup.instance().switchToLayer(layer)
-                    cmds.arnoldExportAss(asciiAss=1, sf=frame, ef=frame, f=output_path)
+                    cmds.arnoldExportAss(**export_args)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -157,7 +166,6 @@ class ExportAss(CommandBase):
         directory: pathlib.Path = parameters[
             "directory"
         ]  # The directory parameter is temp directory
-        # output_path_without_extension = (directory / file_name)
 
         selected_render_layers: List[str] = parameters["render_layers"]
         frame_range: fileseq.FrameSet = parameters["frame_range"]
