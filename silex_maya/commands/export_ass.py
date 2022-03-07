@@ -145,7 +145,7 @@ class ExportAss(CommandBase):
                         output_path = directory / "assets" / f"{file_name}"
                         export_args.update({'f': output_path})
 
-                        # If only ione frame i exported, assets does not need increment
+                        # If only one frame is exported, assets does not need increment
                         if len(frames_list) == 1:
                             del export_args['sf']
                             del export_args['ef']
