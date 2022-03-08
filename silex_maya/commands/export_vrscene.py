@@ -186,7 +186,7 @@ class ExportVrscene(CommandBase):
 
         # Fill the list of possible cameras
         renderable_cameras = []
-        for camera in execute_in_main_thread(cmds.ls, type="camera"):
-            if execute_in_main_thread(cmds.getAttr, f"{camera}.renderable"):
+        for camera in await execute_in_main_thread(cmds.ls, type="camera"):
+            if await execute_in_main_thread(cmds.getAttr, f"{camera}.renderable"):
                 renderable_cameras.append(camera)
         self.command_buffer.parameters["camera"].rebuild_type(*renderable_cameras)
