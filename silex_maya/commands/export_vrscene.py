@@ -5,7 +5,7 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta, IntArrayParameterMeta
+from silex_client.utils.parameter_types import MultipleSelectParameterMeta, IntArrayParameterMeta, SelectParameterMeta
 from silex_client.utils.datatypes import SharedVariable
 
 from silex_maya.utils.thread import execute_in_main_thread
@@ -19,7 +19,6 @@ import pathlib
 
 import gazu.files
 from maya import cmds
-
 
 class ExportVrscene(CommandBase):
     """
@@ -38,6 +37,10 @@ class ExportVrscene(CommandBase):
             "type": pathlib.Path,
             "value": None,
             "hide": True,
+        },
+        "camera": {
+            "label": "Camera",
+            "type": SelectParameterMeta(),
         },
         "render_layers": {
             "label": "Select render layers",
@@ -101,6 +104,7 @@ class ExportVrscene(CommandBase):
     ):
         directory: pathlib.Path = parameters["directory"]
         file_name: pathlib.Path = parameters["file_name"]
+        camera: str = parameters["camera"]
         render_layers: List[str] = parameters["render_layers"]
         extension = await gazu.files.get_output_type_by_name("vrscene")
         parameter_overrides: bool = parameters["parameter_overrides"]
@@ -144,7 +148,8 @@ class ExportVrscene(CommandBase):
                 cmds.editRenderLayerGlobals, currentRenderLayer=layer
             )
             logger.info("Executing: vrend on layer %s to %s", layer, output_path)
-            await execute_in_main_thread(cmds.vrend)
+            await execute_in_main_thread(cmds.setAttr, f"{camera}.renderable", 1)
+            await execute_in_main_thread(cmds.vrend, camera=camera)
 
         task.cancel()
         if "defaultRenderLayer" in await execute_in_main_thread(
@@ -180,3 +185,6 @@ class ExportVrscene(CommandBase):
         hide_overrides = not parameters["parameter_overrides"]
         self.command_buffer.parameters["frame_range"].hide = hide_overrides
 
+        # Fill the list of possible cameras
+        renderable_cameras = await execute_in_main_thread(cmds.ls, type="camera")
+        self.command_buffer.parameters["camera"].rebuild_type(*renderable_cameras)
