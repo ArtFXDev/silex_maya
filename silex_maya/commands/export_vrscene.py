@@ -148,6 +148,7 @@ class ExportVrscene(CommandBase):
                 cmds.editRenderLayerGlobals, currentRenderLayer=layer
             )
             logger.info("Executing: vrend on layer %s to %s", layer, output_path)
+            await execute_in_main_thread(cmds.setAttr, f"{camera}.renderable", 1)
             await execute_in_main_thread(cmds.vrend, camera=camera)
 
         task.cancel()
@@ -185,8 +186,5 @@ class ExportVrscene(CommandBase):
         self.command_buffer.parameters["frame_range"].hide = hide_overrides
 
         # Fill the list of possible cameras
-        renderable_cameras = []
-        for camera in await execute_in_main_thread(cmds.ls, type="camera"):
-            if await execute_in_main_thread(cmds.getAttr, f"{camera}.renderable"):
-                renderable_cameras.append(camera)
+        renderable_cameras = await execute_in_main_thread(cmds.ls, type="camera")
         self.command_buffer.parameters["camera"].rebuild_type(*renderable_cameras)
