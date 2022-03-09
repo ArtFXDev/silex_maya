@@ -47,6 +47,7 @@ def create_shelf():
                 height=37,
                 image=action.get("thumbnail", ""),
                 l=action_name,
+                imageOverlayLabel=action_name,
                 command=script,
                 olb=(0, 0, 0, 0),
                 olc=(0.9, 0.9, 0.9),
