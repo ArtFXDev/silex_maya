@@ -1,6 +1,8 @@
 quality_check:
+  shelf: "misc"
   label: "Quality check"
   thumbnail: "quality_check.svg"
+
   steps:
     quality_check:
       label: "Quality check ☑"
@@ -18,7 +20,7 @@ quality_check:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
-            values: 
+            values:
               value: !command-output "quality_check:get_references:file_paths"
               hide: true
             actions:

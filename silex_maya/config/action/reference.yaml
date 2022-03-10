@@ -1,5 +1,7 @@
 reference:
+  shelf: "input"
   thumbnail: "ref.svg"
+
   steps:
     reference:
       label: "Reference"
