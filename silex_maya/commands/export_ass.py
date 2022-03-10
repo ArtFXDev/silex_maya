@@ -46,7 +46,7 @@ class ExportAss(CommandBase):
         "render_layers": {
             "label": "Select render layers",
             "type": MultipleSelectParameterMeta(),
-            "value": ["masterLayer", "assets"],
+            "value": ["masterLayer"],
         },
     }
 
