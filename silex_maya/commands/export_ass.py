@@ -13,6 +13,8 @@ if typing.TYPE_CHECKING:
 
 import contextlib
 import logging
+import re
+import os
 import pathlib
 
 import fileseq
@@ -99,6 +101,7 @@ class ExportAss(CommandBase):
     def _export_sequence(
         self,
         directory: pathlib.Path,
+        logger,
         file_name: pathlib.Path,
         frame_range: fileseq.FrameSet,
         selected_render_layers: List[str],
@@ -108,7 +111,7 @@ class ExportAss(CommandBase):
         frames_list = list(frame_range)
 
         # Each render layer is exported to a different directory
-        output_path = directory / "<RenderLayer>" / f"{file_name}_<RenderLayer>"
+        output_path = directory / "<RenderLayer>" / f"{file_name}_<RenderLayer>.ass"
 
         # We use a context to switch between layers so the user can still work in his scene
         with self._maintained_render_layer():
@@ -152,7 +155,19 @@ class ExportAss(CommandBase):
                             
                     # Export the active (visible) layer in the context
                     renderSetup.instance().switchToLayer(layer)
-                    cmds.arnoldExportAss(**export_args)
+                    sequence = cmds.arnoldExportAss(**export_args)
+
+                    # Temporary fix
+                    logger.error(sequence[0])
+                    logger.error(re.search( r"^.+\_\d+\.ass$", sequence[0]))
+                    if re.search( r"^.+\_\d+\.ass$", sequence[0]):
+                        for f in sequence:
+                            logger.error(f)
+                            increment = f.split('/')[-1].split('.')[0].split('_')[-1]
+                            logger.error(increment)
+                            f2 = f.replace(f'_{increment}.ass', f'.{increment}.ass')
+                            logger.error(f2)
+                            os.rename(f , f2)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -174,6 +189,7 @@ class ExportAss(CommandBase):
         await thread_maya.execute_in_main_thread(
             self._export_sequence,
             directory,
+            logger,
             file_name,
             frame_range,
             selected_render_layers,
