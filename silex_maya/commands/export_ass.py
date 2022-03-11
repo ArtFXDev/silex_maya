@@ -111,7 +111,7 @@ class ExportAss(CommandBase):
         frames_list = list(frame_range)
 
         # Each render layer is exported to a different directory
-        output_path = directory / "<RenderLayer>" / f"{file_name}_<RenderLayer>.ass"
+        output_path = directory / "<RenderLayer>" / f"{file_name}_<RenderLayer>"
 
         # We use a context to switch between layers so the user can still work in his scene
         with self._maintained_render_layer():
