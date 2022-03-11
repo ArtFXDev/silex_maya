@@ -1,6 +1,8 @@
 save:
+  shelf: "build"
   hide: true
   thumbnail: "save.svg"
+
   steps:
     save:
       label: "Save"

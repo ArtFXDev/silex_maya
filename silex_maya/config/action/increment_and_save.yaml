@@ -1,6 +1,8 @@
 increment_and_save:
+  shelf: "build"
   hide: true
   thumbnail: "save_increment.svg"
+
   steps:
     increment_and_save:
       label: "increment and save"

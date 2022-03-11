@@ -108,14 +108,16 @@ class ExportMa(CommandBase):
             )
         else:
             current_path = await execute_in_main_thread(cmds.file, q=True, sn=True)
-            if current_path:
+            if current_path and pathlib.Path(current_path).exists():
                 await execute_in_main_thread(cmds.file, save=True)
 
             await execute_in_main_thread(cmds.file, rename=export_path)
             await execute_in_main_thread(cmds.file, save=True, typ="mayaAscii")
 
-            if current_path:
+            if current_path and pathlib.Path(current_path).exists():
                 await execute_in_main_thread(cmds.file, rename=current_path)
+            else:
+                await execute_in_main_thread(cmds.file, rename="untitled")
 
         return export_path
 
