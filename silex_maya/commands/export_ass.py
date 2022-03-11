@@ -138,6 +138,8 @@ class ExportAss(CommandBase):
             for layer_name in selected_render_layers:
                 layer: Any = render_layers_dict[layer_name]
 
+                sequence = [] # Hot fix
+
                 # We export a ass file for every frame in the range
                 for frame in frames_list:
 
@@ -155,19 +157,21 @@ class ExportAss(CommandBase):
                             
                     # Export the active (visible) layer in the context
                     renderSetup.instance().switchToLayer(layer)
-                    sequence = cmds.arnoldExportAss(**export_args)
+                    ass_file = cmds.arnoldExportAss(**export_args)
 
-                    # Temporary fix
-                    logger.error(sequence[0])
-                    logger.error(re.search( r"^.+\_\d+\.ass$", sequence[0]))
-                    if re.search( r"^.+\_\d+\.ass$", sequence[0]):
-                        for f in sequence:
-                            logger.error(f)
-                            increment = f.split('/')[-1].split('.')[0].split('_')[-1]
-                            logger.error(increment)
-                            f2 = f.replace(f'_{increment}.ass', f'.{increment}.ass')
-                            logger.error(f2)
-                            os.rename(f , f2)
+                    sequence.append(ass_file[0])
+
+                # Temporary fix
+                logger.error(sequence[0])
+                logger.error(re.search( r"^.+\_\d+\.ass$", sequence[0]))
+                if re.search( r"^.+\_\d+\.ass$", sequence[0]):
+                    for f in sequence:
+                        logger.error(f)
+                        increment = f.split('/')[-1].split('.')[0].split('_')[-1]
+                        logger.error(increment)
+                        f2 = f.replace(f'_{increment}.ass', f'.{increment}.ass')
+                        logger.error(f2)
+                        os.rename(f , f2)
 
     @CommandBase.conform_command()
     async def __call__(
