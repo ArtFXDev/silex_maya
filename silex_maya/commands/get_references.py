@@ -203,6 +203,8 @@ class GetReferences(CommandBase):
         referenced_files = await execute_in_main_thread(
             self._get_scene_references, logger
         )
+        logger.error(referenced_files)
+
 
         skip_all = False
         for attribute, file_path in referenced_files:
@@ -282,6 +284,8 @@ class GetReferences(CommandBase):
             list(pathlib.Path(str(path)) for path in file_paths[1])
             for file_paths in references
         ]
+
+        logger.error(reference_file_paths)
 
         return {
             "attributes": reference_attributes,
