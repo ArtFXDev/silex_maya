@@ -1,70 +1,3 @@
-# ma: !inherit
-#   parent: ".ma"
-#   category: "conform"
-
-#   steps:
-#     input:
-#       index: 10
-#       hide: True
-#       commands:
-#         input:
-#           path: "silex_client.commands.pass.Pass"
-
-#     get_conform_location:
-#       commands:
-#         build_output_path:
-#           label: "Build path"
-#           path: "silex_client.commands.build_bundle_path.BuildBundlePath"
-#           parameters:
-#             file_to_bundle:
-#               value: !command-output "input:input:file_paths"
-#             frame_set:
-#               value: !command-output "input:input:frame_set"
-#             padding:
-#               value: !command-output "input:input:padding"
-
-#         set_conform_cache:
-#           path: "silex_client.commands.pass.Pass"
-#         set_fast_conform_cache:
-#           path: "silex_client.commands.pass.Pass"
-#         get_output_cache:
-#           path: "silex_client.commands.pass.Pass"
-
-#     conform_references:
-#       commands:
-#         step_exit:
-#           path: "silex_client.commands.pass.Pass"
-#         cleanup:
-#           path: "silex_client.commands.pass.Pass"
-#         conform_references:
-#           label: "Conform references found"
-#           path: "silex_client.commands.iterate_action.IterateAction"
-#           parameters:
-#             values:
-#               value: !command-output "conform_references:get_references:file_paths"
-#               hide: true
-#             actions:
-#               - "conform_bundle"
-#             categories:
-#               - "action"
-#             parameter: "setup:get_conform_output:file_paths"
-#             label_key: "file_paths"
-#             output: "setup:append_conform_actions"
-
-#     conform_scene:
-#       commands:
-#         step_exit:
-#           path: "silex_client.commands.pass.Pass"
-#         set_output_cache:
-#           path: "silex_client.commands.pass.Pass"
-
-#     output:
-#       commands:
-#         get_output_cache:
-#           path: "silex_client.commands.pass.Pass"
-#         output:
-#           path: "silex_client.commands.pass.Pass"
-# ######################
 ma:
   steps:
     input:
@@ -78,25 +11,7 @@ ma:
       label: "Get maya scene conform location"
       index: 15
       commands:
-        get_conform_cache:
-          label: "Get previous conform location"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "build_output_path_task_id"
-            key_suffix: !command-output "input:input:file_paths"
-          hide: true
-        get_fast_conform_cache:
-          label: "Check fast conform"
-          path: "silex_client.commands.get_stored_value.GetStoredValue"
-          parameters:
-            key: "fast_conform_enabled"
-            key_suffix:
-              value: !command-output "input:input:file_paths"
-              hide: true
-            default: false
-          hide: true
-
-        build_output_path:
+        build_bundle_path:
           label: "Build path"
           path: "silex_client.commands.build_bundle_path.BuildBundlePath"
           parameters:
@@ -106,22 +21,15 @@ ma:
               value: !command-output "input:input:frame_set"
             padding:
               value: !command-output "input:input:padding"
+            is_reference:
+              value: !command-output "input:input:is_reference"
             output_type:
               value: "ma"
-
-        set_conform_cache:
-          path: "silex_client.commands.pass.Pass"
-        set_fast_conform_cache:
-          path: "silex_client.commands.pass.Pass"
-        get_output_cache:
-          path: "silex_client.commands.pass.Pass"
 
     conform_references:
       label: "Conform Maya scene's references"
       index: 20
       commands:
-        step_exit:
-          path: "silex_client.commands.pass.Pass"
         focus_maya_a:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
@@ -134,13 +42,16 @@ ma:
               hide: true
             save: True
         cleanup:
-          path: "silex_client.commands.pass.Pass"
+          label: "Cleanup scene"
+          path: "silex_maya.commands.cleanup_scene.CleanupScene"
         get_references:
           label: "Get referenced files"
           path: "silex_maya.commands.get_references.GetReferences"
           parameters:
             skip_existing_conformed_file:
               value: false
+            skip_prompt:
+              value: true
         conform_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
@@ -149,9 +60,9 @@ ma:
               value: !command-output "conform_references:get_references:file_paths"
               hide: true
             actions:
-              - "conform_bundle"
+              - "reference_bundle"
             categories:
-              - "action"
+              - "bundle"
             parameter: "setup:get_conform_output:file_paths"
             label_key: "file_paths"
             output: "setup:append_conform_actions"
@@ -160,8 +71,6 @@ ma:
       label: "Conform Maya scene"
       index: 30
       commands:
-        step_exit:
-          path: "silex_client.commands.pass.Pass"
         repath_attributes:
           label: "Repath attributes"
           path: "silex_maya.commands.set_references.SetReferences"
@@ -173,7 +82,6 @@ ma:
             values:
               value: !command-output "conform_references:conform_references"
               hide: true
-
         focus_maya_a:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
@@ -182,7 +90,7 @@ ma:
           path: "silex_maya.commands.save.Save"
           parameters:
             file_path:
-              value: !command-output "get_conform_location:build_output_path:full_path"
+              value: !command-output "get_conform_location:build_bundle_path:full_path"
               hide: true
         focus_maya_b:
           label: "Focus DCC"
@@ -196,12 +104,11 @@ ma:
               hide: true
             save: False
 
-        set_output_cache:
-          path: "silex_client.commands.pass.Pass"
-
     output:
+      index: 45
+      hide: true
       commands:
-        get_output_cache:
-          path: "silex_client.commands.pass.Pass"
         output:
           path: "silex_client.commands.pass.Pass"
+          parameters:
+            input: !command-output "conform_scene:save:new_path"

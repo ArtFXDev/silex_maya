@@ -52,6 +52,10 @@ class GetReferences(CommandBase):
             "type": bool,
             "value": True,
         },
+        "skip_prompt": {
+            "type": bool,
+            "value": False,
+        },
     }
 
     async def _prompt_new_path(
@@ -196,6 +200,7 @@ class GetReferences(CommandBase):
         excluded_extensions = parameters["excluded_extensions"]
         included_extensions = parameters["included_extensions"]
         skip_existing_conformed_file = parameters["skip_existing_conformed_file"]
+        skip_prompt = parameters["skip_prompt"]
 
         # Each referenced file must be verified
         references: List[Tuple[str, fileseq.FileSequence]] = []
@@ -203,8 +208,6 @@ class GetReferences(CommandBase):
         referenced_files = await execute_in_main_thread(
             self._get_scene_references, logger
         )
-        logger.error(referenced_files)
-
 
         skip_all = False
         for attribute, file_path in referenced_files:
@@ -276,7 +279,7 @@ class GetReferences(CommandBase):
             value=message,
         )
         # Send the message to inform the user
-        if references:
+        if references and not skip_prompt:
             await self.prompt_user(action_query, {"info": info_parameter})
 
         reference_attributes = [ref[0] for ref in references]
@@ -284,8 +287,6 @@ class GetReferences(CommandBase):
             list(pathlib.Path(str(path)) for path in file_paths[1])
             for file_paths in references
         ]
-
-        logger.error(reference_file_paths)
 
         return {
             "attributes": reference_attributes,

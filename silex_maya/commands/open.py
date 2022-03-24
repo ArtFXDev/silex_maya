@@ -44,8 +44,6 @@ class Open(CommandBase):
     ):
         file_path = parameters["file_path"]
 
-        logger.error(file_path)
-
         # First get the current file name
         current_file = await execute_in_main_thread(
             cmds.file, q=True, sn=True, prompt=False
