@@ -149,7 +149,7 @@ ma:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
           parameters:
-            file_path:
+            file_paths:
               value: !command-output "get_conform_location:build_output_path:full_path"
               hide: true
         focus_maya_b:

@@ -7,7 +7,7 @@ ma:
         input:
           path: "silex_client.commands.pass.Pass"
 
-    get_conform_location:
+    get_bundle_location:
       label: "Get maya scene conform location"
       index: 15
       commands:
@@ -26,8 +26,8 @@ ma:
             output_type:
               value: "ma"
 
-    conform_references:
-      label: "Conform Maya scene's references"
+    bundle_references:
+      label: "bundle Maya scene's references"
       index: 20
       commands:
         focus_maya_a:
@@ -52,12 +52,12 @@ ma:
               value: false
             skip_prompt:
               value: true
-        conform_references:
+        bundle_references:
           label: "Conform references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             values:
-              value: !command-output "conform_references:get_references:file_paths"
+              value: !command-output "bundle_references:get_references:file_paths"
               hide: true
             actions:
               - "reference_bundle"
@@ -67,8 +67,8 @@ ma:
             label_key: "file_paths"
             output: "setup:append_conform_actions"
 
-    conform_scene:
-      label: "Conform Maya scene"
+    bundle_scene:
+      label: "Bundle Maya scene"
       index: 30
       commands:
         repath_attributes:
@@ -77,21 +77,35 @@ ma:
           tooltip: "Set the new path on the attributes"
           parameters:
             attributes:
-              value: !command-output "conform_references:get_references:attributes"
+              value: !command-output "bundle_references:get_references:attributes"
               hide: true
             values:
-              value: !command-output "conform_references:conform_references"
+              value: !command-output "bundle_references:bundle_references"
               hide: true
         focus_maya_a:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
+        expand_paths:
+          label: "Expand environement variables"
+          path: "silex_client.commands.expand_paths.ExpandPaths"
+          parameters:
+            paths_to_expand:
+              value: !command-output "get_bundle_location:build_bundle_path:full_path"
         save:
           label: "Save the maya scene to the right location"
           path: "silex_maya.commands.save.Save"
           parameters:
-            file_path:
-              value: !command-output "get_conform_location:build_bundle_path:full_path"
+            file_paths:
+              value: !command-output "bundle_scene:expand_paths:expanded_paths"
               hide: true
+        set_env:
+          label: "Replace path by environement variables"
+          path: "silex_client.commands.set_env.SetEnv"
+          parameters:
+            paths:
+              value: !command-output "bundle_scene:save:new_path"
+            envs:
+              value: !command-output "bundle_scene:expand_paths:envs"
         focus_maya_b:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
@@ -100,7 +114,7 @@ ma:
           path: "silex_maya.commands.open.Open"
           parameters:
             file_path:
-              value: !command-output "conform_references:open:old_path"
+              value: !command-output "bundle_references:open:old_path"
               hide: true
             save: False
 
@@ -111,4 +125,4 @@ ma:
         output:
           path: "silex_client.commands.pass.Pass"
           parameters:
-            input: !command-output "conform_scene:save:new_path"
+            input: !command-output "bundle_scene:set_env:expanded_paths"
