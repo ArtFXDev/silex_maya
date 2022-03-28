@@ -112,11 +112,6 @@ class GetReferences(CommandBase):
             ):
                 return False
 
-        if cmds.nodeType(attribute) == "aiVolume":
-            node = ".".join(attribute.split(".")[:-1])
-            if (cmds.getAttr(f"{node}.useFrameExtension") != 1):
-                return False
-
         # Maya references cannot be references
         if file_path.suffix in [".ma", ".mb"]:
             return False
@@ -208,7 +203,6 @@ class GetReferences(CommandBase):
             # Get the sequence that correspond to the file path
             file_paths = fileseq.FileSequence(file_path)
             if self._test_possible_sequence(attribute, file_path):
-                logger.error("possible_sequence")
                 file_paths = await execute_in_main_thread(
                     self._get_reference_sequence, file_path
                 )
@@ -228,7 +222,6 @@ class GetReferences(CommandBase):
 
             # Make sure the file path leads to a reachable file
             skip = False
-            logger.error(file_paths)
             while not sequence_exists(file_paths):
                 if skip_all:
                     skip = True
