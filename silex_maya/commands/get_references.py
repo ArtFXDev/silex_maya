@@ -112,6 +112,12 @@ class GetReferences(CommandBase):
             ):
                 return False
 
+        # Test the parameters for a aiStandin node
+        if cmds.nodeType(attribute) == "aiStandIn":
+            node = ".".join(attribute.split(".")[:-1])
+            if cmds.getAttr(f"{node}.useFrameExtension") != 1:
+                return False
+
         # Maya references cannot be references
         if file_path.suffix in [".ma", ".mb"]:
             return False
@@ -165,7 +171,7 @@ class GetReferences(CommandBase):
         """
         # We need to get the real path first, expand the syntaxes like <UDIM> or <frame04>
         match_sequence = expand_template_to_sequence(file_path, MATCH_FILE_SEQUENCE)
-        if len(match_sequence) > 0:
+        if len(match_sequence) > 1:
             return match_sequence
 
         pattern_match: List[str] = ftpr.findAllFilesForPattern(str(file_path), None)
