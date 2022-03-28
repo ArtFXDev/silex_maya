@@ -8,7 +8,7 @@ ma:
           path: "silex_client.commands.pass.Pass"
 
     get_bundle_location:
-      label: "Get maya scene conform location"
+      label: "Get maya scene bundle location"
       index: 15
       commands:
         build_bundle_path:
@@ -34,7 +34,7 @@ ma:
           label: "Focus DCC"
           path: "silex_client.commands.focus.Focus"
         open:
-          label: "Open scene to conform"
+          label: "Open scene to bundle"
           path: "silex_maya.commands.open.Open"
           parameters:
             file_path:
@@ -53,7 +53,7 @@ ma:
             skip_prompt:
               value: true
         bundle_references:
-          label: "Conform references found"
+          label: "bundle references found"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             values:
@@ -63,9 +63,9 @@ ma:
               - "reference_bundle"
             categories:
               - "bundle"
-            parameter: "setup:get_conform_output:file_paths"
+            parameter: "setup:get_bundle_output:file_paths"
             label_key: "file_paths"
-            output: "setup:append_conform_actions"
+            output: "setup:append_bundle_actions"
 
     bundle_scene:
       label: "Bundle Maya scene"
