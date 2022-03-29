@@ -53,7 +53,7 @@ ma:
             skip_prompt:
               value: true
         bundle_references:
-          label: "bundle references found"
+          label: "bundle found references"
           path: "silex_client.commands.iterate_action.IterateAction"
           parameters:
             values:
