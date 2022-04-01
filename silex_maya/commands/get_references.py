@@ -220,7 +220,7 @@ class GetReferences(CommandBase):
                 )
                 continue
 
-            if len(excluded_extensions) > 0 and file_paths.extension() not in included_extensions:
+            if len(included_extensions) > 0 and file_paths.extension() not in included_extensions:
                 logger.warning(
                     "Excluded attribute %s pointing to %s", attribute, file_path
                 )
