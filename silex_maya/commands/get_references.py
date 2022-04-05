@@ -47,7 +47,7 @@ class GetReferences(CommandBase):
             "tooltip": "List of file extensions to accept",
             "hide": True,
         },
-        "skip_existing_conformed_file": {
+        "skip_conformed": {
             "label": "Skip existing conformed file",
             "type": bool,
             "value": True,
@@ -199,7 +199,7 @@ class GetReferences(CommandBase):
     ):
         excluded_extensions = parameters["excluded_extensions"]
         included_extensions = parameters["included_extensions"]
-        skip_existing_conformed_file = parameters["skip_existing_conformed_file"]
+        skip_conformed = parameters["skip_conformed"]
         skip_prompt = parameters["skip_prompt"]
 
         # Each referenced file must be verified
@@ -255,7 +255,7 @@ class GetReferences(CommandBase):
                 continue
 
             # Skip the references that are already conformed
-            if skip_existing_conformed_file and all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
+            if skip_conformed and all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
                 continue
 
             # Append to the verified path
