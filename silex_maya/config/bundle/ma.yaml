@@ -48,7 +48,7 @@ ma:
           label: "Get referenced files"
           path: "silex_maya.commands.get_references.GetReferences"
           parameters:
-            skip_existing_conformed_file:
+            skip_conformed:
               value: false
             skip_prompt:
               value: true
