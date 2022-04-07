@@ -13,6 +13,7 @@ from silex_client.utils.files import (
     is_valid_pipeline_path,
     is_valid_path,
     sequence_exists,
+    expand_template_to_sequence
 )
 from silex_client.utils.parameter_types import ListParameterMeta, TextParameterMeta
 from silex_maya.utils.thread import execute_in_main_thread
@@ -111,6 +112,12 @@ class GetReferences(CommandBase):
             ):
                 return False
 
+        # Test the parameters for a aiStandin node
+        if cmds.nodeType(attribute) == "aiStandIn":
+            node = ".".join(attribute.split(".")[:-1])
+            if cmds.getAttr(f"{node}.useFrameExtension") != 1:
+                return False
+
         # Maya references cannot be references
         if file_path.suffix in [".ma", ".mb"]:
             return False
@@ -163,6 +170,10 @@ class GetReferences(CommandBase):
         The reference is not a sequence, the returned value will be a sequence of one item
         """
         # We need to get the real path first, expand the syntaxes like <UDIM> or <frame04>
+        match_sequence = expand_template_to_sequence(file_path, MATCH_FILE_SEQUENCE)
+        if len(match_sequence) > 1:
+            return match_sequence
+
         pattern_match: List[str] = ftpr.findAllFilesForPattern(str(file_path), None)
         if len(pattern_match) > 0:
             file_path = pathlib.Path(str(pattern_match[0]))
@@ -196,7 +207,7 @@ class GetReferences(CommandBase):
         skip_all = False
         for attribute, file_path in referenced_files:
             # Get the sequence that correspond to the file path
-            file_paths = fileseq.findSequencesInList([file_path])[0]
+            file_paths = fileseq.FileSequence(file_path)
             if self._test_possible_sequence(attribute, file_path):
                 file_paths = await execute_in_main_thread(
                     self._get_reference_sequence, file_path
@@ -209,7 +220,7 @@ class GetReferences(CommandBase):
                 )
                 continue
 
-            if len(excluded_extensions) > 0 and file_paths.extension() not in included_extensions:
+            if len(included_extensions) > 0 and file_paths.extension() not in included_extensions:
                 logger.warning(
                     "Excluded attribute %s pointing to %s", attribute, file_path
                 )
