@@ -157,16 +157,17 @@ class ExportAss(CommandBase):
                             
                     # Export the active (visible) layer in the context
                     renderSetup.instance().switchToLayer(layer)
-                
                     cmds.arnoldExportAss(**export_args)
 
+                    # Get exported sequence
                     ass_files = os.listdir(directory / layer_name)
                     sequence = [directory / layer_name / f for f in ass_files]
 
                 # Fix bad incrementation '_0001.ass' -> '.0001.ass'
-                if re.match( r"^.+(\_(\d+)\.)ass$", str(sequence[0])):
+                regex = r"^.+\_\d+\.ass$"
+                if re.match(regex, str(sequence[0])):
                     for ass in sequence:
-                        match = re.match( r"^.+(\_(\d+)\.)ass$", str(ass))
+                        match = re.match(regex, str(ass))
                         new_ass = str(ass).replace(f'{match.group(1)}ass', f'.{match.group(2)}.ass')
                         os.rename(ass , new_ass)
 
