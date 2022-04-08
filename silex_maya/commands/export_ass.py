@@ -148,7 +148,7 @@ class ExportAss(CommandBase):
                     # Specific export for assets
                     if layer_name == 'assets':
                         output_path = directory / "assets" / f"{file_name}"
-                        export_args.update({'f': output_path})
+                        export_args.update({'f': output_path, "camera":'topShape'})
 
                         # If only one frame is exported, assets does not need increment
                         if len(frames_list) == 1:
