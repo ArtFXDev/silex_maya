@@ -70,6 +70,7 @@ vrscene:
           label: "Move"
           path: "silex_client.commands.move.Move"
           parameters:
+            merge: true
             src:
               value: !command-output "export:export_vrscene"
               hide: true
