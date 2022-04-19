@@ -20,4 +20,4 @@ increment_and_save:
         save_scene:
           path: "silex_maya.commands.save.Save"
           parameters:
-            file_path: !command-output "increment_and_save:build_work_path"
+            file_paths: !command-output "increment_and_save:build_work_path"

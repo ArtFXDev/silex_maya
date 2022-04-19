@@ -47,10 +47,14 @@ class GetReferences(CommandBase):
             "tooltip": "List of file extensions to accept",
             "hide": True,
         },
-        "skip_existing_conformed_file": {
+        "skip_conformed": {
             "label": "Skip existing conformed file",
             "type": bool,
             "value": True,
+        },
+        "skip_prompt": {
+            "type": bool,
+            "value": False,
         },
     }
 
@@ -195,7 +199,8 @@ class GetReferences(CommandBase):
     ):
         excluded_extensions = parameters["excluded_extensions"]
         included_extensions = parameters["included_extensions"]
-        skip_existing_conformed_file = parameters["skip_existing_conformed_file"]
+        skip_conformed = parameters["skip_conformed"]
+        skip_prompt = parameters["skip_prompt"]
 
         # Each referenced file must be verified
         references: List[Tuple[str, fileseq.FileSequence]] = []
@@ -250,31 +255,31 @@ class GetReferences(CommandBase):
                 continue
 
             # Skip the references that are already conformed
-            if skip_existing_conformed_file and all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
+            if skip_conformed and all(is_valid_pipeline_path(pathlib.Path(path)) for path in file_paths):
                 continue
 
             # Append to the verified path
             references.append((attribute, file_paths))
             logger.info("Referenced file(s) %s found at %s", file_paths, attribute)
 
-        # Display a message to the user to inform about all the references to conform
-        current_scene = await execute_in_main_thread(cmds.file, q=True, sn=True)
-        message = (
-            f"The scene\n{current_scene}\nis referencing non conformed file(s) :\n\n"
-        )
-
-        for attribute, file_path in references:
-            message += f"- {file_path}\n"
-
-        message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
-        info_parameter = ParameterBuffer(
-            type=TextParameterMeta("info"),
-            name="info",
-            label="Info",
-            value=message,
-        )
         # Send the message to inform the user
-        if references:
+        if references and not skip_prompt:
+            # Display a message to the user to inform about all the references to conform
+            current_scene = await execute_in_main_thread(cmds.file, q=True, sn=True)
+            message = (
+                f"The scene\n{current_scene}\nis referencing non conformed file(s) :\n\n"
+            )
+
+            for attribute, file_path in references:
+                message += f"- {file_path}\n"
+
+            message += "\nThese files must be conformed and repathed first. Press continue to conform and repath them"
+            info_parameter = ParameterBuffer(
+                type=TextParameterMeta("info"),
+                name="info",
+                label="Info",
+                value=message,
+            )
             await self.prompt_user(action_query, {"info": info_parameter})
 
         reference_attributes = [ref[0] for ref in references]
