@@ -70,13 +70,13 @@ class ExportVrmesh(CommandBase):
     @staticmethod
     def import_references():
         # Since importing references clears the selection we store it before
-        selection = cmds.ls(sl=True)
+        selection_cache = cmds.ls(sl=True)
         for selection in cmds.ls(sl=True):
-            for node in cmds.listRelatives(selection, allDescendents=True):
+            for node in cmds.listRelatives(selection, allDescendents=True, fullPath=True):
                 if cmds.referenceQuery(node, isNodeReferenced=True):
                     file_path = cmds.referenceQuery(node, f=True)
                     cmds.file(file_path, importReference=True)
-        cmds.select(selection)
+        cmds.select(selection_cache)
 
     @CommandBase.conform_command()
     async def __call__(
