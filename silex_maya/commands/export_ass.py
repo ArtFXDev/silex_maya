@@ -153,7 +153,7 @@ class ExportAss(CommandBase):
                 sequence = [directory / layer_name / f for f in ass_files]
 
             # Fix bad incrementation '_0001.ass' -> '.0001.ass'
-            regex = r"^.+\_\d+\.ass$"
+            regex = r"^.+(\_(\d+)\.)ass$"
             if re.match(regex, str(sequence[0])):
                 for ass in sequence:
                     match = re.match(regex, str(ass))
