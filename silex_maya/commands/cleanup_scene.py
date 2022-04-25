@@ -6,6 +6,7 @@ import textwrap
 import typing
 from typing import Any, Dict, List
 
+from contextlib import suppress
 from silex_client.action.command_base import CommandBase
 from silex_client.action.parameter_buffer import ParameterBuffer
 from silex_client.utils.parameter_types import TextParameterMeta
@@ -16,7 +17,7 @@ from silex_maya.utils.thread import execute_in_main_thread
 if typing.TYPE_CHECKING:
     from silex_client.action.action_query import ActionQuery
 
-from maya import cmds
+from maya import cmds, mel
 
 
 class CleanupScene(CommandBase):
@@ -101,3 +102,8 @@ class CleanupScene(CommandBase):
             """
             if await self._prompt_fix(action_query, textwrap.dedent(message)):
                 await execute_in_main_thread(rename_duplicates_nodes, regex_filters)
+
+        # Remove the vray crop region to prevent rendering region on the renderfarm
+        # The exceptions are ignored in case vray is not installed
+        with suppress(RuntimeError):
+            await execute_in_main_thread(mel.eval, "vray vfbControl -setregion reset")
