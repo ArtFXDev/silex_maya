@@ -199,9 +199,8 @@ class ExportVrmesh(CommandBase):
         self.command_buffer.parameters["end_frame"].hide = True
 
         # Display frame range if esport is an animation 
-        if parameters['is_animation']:
-            self.command_buffer.parameters["start_frame"].hide = False
-            self.command_buffer.parameters["end_frame"].hide = False
+        self.command_buffer.parameters["start_frame"].hide = not(parameters.get("is_animation", False))
+        self.command_buffer.parameters["end_frame"].hide = not(parameters.get("is_animation", False))
 
             
 
