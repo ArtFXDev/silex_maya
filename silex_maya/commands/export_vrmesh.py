@@ -194,10 +194,6 @@ class ExportVrmesh(CommandBase):
             "create_proxy", False
         )
 
-        # Hide start frame and end frame 
-        self.command_buffer.parameters["start_frame"].hide = True
-        self.command_buffer.parameters["end_frame"].hide = True
-
         # Display frame range if esport is an animation 
         self.command_buffer.parameters["start_frame"].hide = not(parameters.get("is_animation", False))
         self.command_buffer.parameters["end_frame"].hide = not(parameters.get("is_animation", False))
