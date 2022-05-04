@@ -61,6 +61,23 @@ class ExportVrmesh(CommandBase):
             "type": str,
             "value": "vray_proxy",
         },
+        "is_animation": {
+            'label': "Export animation",
+            "type": bool,
+            "value": False,
+        },
+        "start_frame": {
+            'label': "Start frame",
+            "type": int,
+            "hide": True,
+            "value": 0,
+        },
+        "end_frame": {
+            'label': "End frame",
+            "type": int,
+            "hide": True,
+            "value": 100,
+        },
     }
 
     def __init__(self, *args, **kwargs):
@@ -70,13 +87,13 @@ class ExportVrmesh(CommandBase):
     @staticmethod
     def import_references():
         # Since importing references clears the selection we store it before
-        selection = cmds.ls(sl=True)
+        selection_cache = cmds.ls(sl=True)
         for selection in cmds.ls(sl=True):
-            for node in cmds.listRelatives(selection, allDescendents=True):
+            for node in cmds.listRelatives(selection, allDescendents=True, fullPath=True):
                 if cmds.referenceQuery(node, isNodeReferenced=True):
                     file_path = cmds.referenceQuery(node, f=True)
                     cmds.file(file_path, importReference=True)
-        cmds.select(selection)
+        cmds.select(selection_cache)
 
     @CommandBase.conform_command()
     async def __call__(
@@ -91,6 +108,7 @@ class ExportVrmesh(CommandBase):
         file_name: str = parameters["file_name"]
         create_proxy: bool = parameters["create_proxy"]
         load_type: int = int(parameters["load_type"])
+        is_animation: bool = parameters["is_animation"]
 
         output_paths = []
 
@@ -104,6 +122,9 @@ class ExportVrmesh(CommandBase):
             "previewFaces": 1000,
             "fname": f"{file_name}.vrmesh",
         }
+
+        if is_animation:
+            export_options.update({"animOn": 1, "animType":3, "startFrame":parameters['start_frame'], "endFrame":parameters['end_frame']})
 
         # The crayCreateProxy command works with the selection, a selection is required for it to work
         while not await execute_in_main_thread(cmds.ls, sl=True):
@@ -172,3 +193,10 @@ class ExportVrmesh(CommandBase):
         self.command_buffer.parameters["load_type"].hide = not parameters.get(
             "create_proxy", False
         )
+
+        # Display frame range if esport is an animation 
+        self.command_buffer.parameters["start_frame"].hide = not(parameters.get("is_animation", False))
+        self.command_buffer.parameters["end_frame"].hide = not(parameters.get("is_animation", False))
+
+            
+
