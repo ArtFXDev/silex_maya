@@ -5,9 +5,12 @@ import typing
 from typing import Any, Dict, List
 
 from silex_client.action.command_base import CommandBase
-from silex_client.utils.parameter_types import MultipleSelectParameterMeta, IntArrayParameterMeta, SelectParameterMeta
 from silex_client.utils.datatypes import SharedVariable
-
+from silex_client.utils.parameter_types import (
+    IntArrayParameterMeta,
+    MultipleSelectParameterMeta,
+    SelectParameterMeta,
+)
 from silex_maya.utils.thread import execute_in_main_thread
 
 # Forward references
@@ -19,6 +22,7 @@ import pathlib
 
 import gazu.files
 from maya import cmds
+
 
 class ExportVrscene(CommandBase):
     """
@@ -117,8 +121,12 @@ class ExportVrscene(CommandBase):
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_render_on", 0)
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_on", 1)
         if parameter_overrides:
-            await execute_in_main_thread(cmds.setAttr, "defaultRenderGlobals.startFrame", frame_range[0])
-            await execute_in_main_thread(cmds.setAttr, "defaultRenderGlobals.endFrame", frame_range[1])
+            await execute_in_main_thread(
+                cmds.setAttr, "defaultRenderGlobals.startFrame", frame_range[0]
+            )
+            await execute_in_main_thread(
+                cmds.setAttr, "defaultRenderGlobals.endFrame", frame_range[1]
+            )
 
         layer_index = SharedVariable(0)
         task = asyncio.create_task(
@@ -152,13 +160,16 @@ class ExportVrscene(CommandBase):
             await execute_in_main_thread(cmds.vrend, camera=camera)
 
         task.cancel()
+
         if "defaultRenderLayer" in await execute_in_main_thread(
             cmds.ls, type="renderLayer"
         ):
-            await execute_in_main_thread(
-                cmds.editRenderLayerGlobals, currentRenderLayer="defaultRenderLayer"
-            )
-
+            try:
+                await execute_in_main_thread(
+                    cmds.editRenderLayerGlobals, currentRenderLayer="defaultRenderLayer"
+                )
+            except Exception as e:
+                logger.error(str(e))
 
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_render_on", 1)
         await execute_in_main_thread(cmds.setAttr, "vraySettings.vrscene_on", 0)
