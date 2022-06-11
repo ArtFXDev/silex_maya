@@ -1,0 +1,16 @@
+maya: !inherit
+  parent: maya
+  steps:
+    fill_parameters:
+      hide: true
+      index: 15
+      commands:
+        get_animation_frame_range:
+          path: "silex_maya.commands.info.get_animation_frame_range.GetAnimationFrameRange"
+
+    maya_render:
+      commands:
+        build_maya_tasks:
+          parameters:
+            frame_range:
+              value: !command-output "fill_parameters:get_animation_frame_range:animation"
