@@ -2,7 +2,7 @@ maya: !inherit
   parent: maya
   steps:
     fill_parameters:
-      hide: false
+      hide: true
       index: 15
       commands:
         get_animation_frame_range:
