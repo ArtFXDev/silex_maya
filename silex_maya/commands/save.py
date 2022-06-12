@@ -5,8 +5,8 @@ import typing
 from typing import Any, Dict
 
 from silex_client.action.command_base import CommandBase
+from silex_client.utils.parameter_types import ListParameterMeta
 from silex_maya.utils.thread import execute_in_main_thread
-from silex_client.utils.parameter_types import ListParameter
 
 # Forward references
 if typing.TYPE_CHECKING:
@@ -22,7 +22,13 @@ class Save(CommandBase):
     Save current scene with context as path
     """
 
-    parameters = {"file_paths": {"label": "filename", "type": ListParameter, "hide": False}}
+    parameters = {
+        "file_paths": {
+            "label": "filename",
+            "type": ListParameterMeta(str),
+            "hide": False,
+        }
+    }
 
     @CommandBase.conform_command()
     async def __call__(
@@ -36,7 +42,7 @@ class Save(CommandBase):
         def save(file_path: str):
             cmds.file(rename=file_path)
             cmds.file(save=True, type="mayaAscii")
-        
+
         for file_path in file_paths:
             if os.path.splitext(file_path)[1] != ".ma":
                 file_path = f"{os.path.splitext(file_path)[0]}.ma"
